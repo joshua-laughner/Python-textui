@@ -67,7 +67,7 @@ class UIErrorWrapper:
 
     do_soft_exit = False
 
-    err_log_stream = sys.stderr;
+    err_log_stream = sys.stderr
 
     def __init__(self, err):
         pass
