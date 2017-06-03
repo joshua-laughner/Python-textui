@@ -136,3 +136,14 @@ class UITypeError(UIError):
 
 class UIValueError(UIError):
     pass
+
+
+class UICallbackError(UIError):
+    def __init__(self, callback):
+        message = "A callback has not returned a new _CallBack instance.\n" \
+                  "See above the traceback for the menu hierarchy leading to the bad call"
+        super(UICallbackError, self).__init__(message)
+        hierarchy = callback.get_menu_hierarchy()
+        for i in range(len(hierarchy)):
+            mstr = "  "*i + "--> " + hierarchy[i]
+            print(mstr)

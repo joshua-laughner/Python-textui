@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __builtin__ import int
 
 import datetime as dt
+import copy
+import re
 from jllutils import genutils
 from .uierrors import UIErrorWrapper, UITypeError, UIValueError
 
@@ -33,7 +35,7 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
     :param emptycancel: optional (type = bool), defaults to True. If true, then this
      function will return None if no answer is chosen (but not if an invalid selection
      is chosen). A message indicating that an empty answer will cancel is added to the prompt.
-     If false, the list of options will be represented if no answer given.
+     If false, the list of options will be re-presented if no answer given.
     :return: either the value or index of the user choice (see returntype) or the type None.
     """
 
@@ -274,3 +276,92 @@ def user_input_yn(prompt, default="y"):
             return False
         else:
             print("Enter y or n only. ", end="")
+
+
+def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
+    """
+    Provides a list of toggleable options to the user
+    Will print the prompt followed by the list of options provided. The user
+    can interactively toggle each option on or off.
+    :param prompt: A string prompting the user what to do. Will be followed
+    by further instructions on what user inputs are valid.
+    :param options: A list or tuple of strings of the option names
+    :param currentstate: optional, a list of bools that describe the current
+     state of the options (on or off). If not given, all default to False.
+     Must be the same length as options. Is shallow copied internally so it
+     will not change the values in the calling function.
+    :param feedback_level: optional, an integer describing how much feedback
+    to give the user. Defaults to 2, meaning that this function will print
+    out what user input it could not parse. Set to 0 to turn this off (1
+    reserved against future intermediate levels of feedback).
+    :return: a list of bools with the new states of the options, or None if
+    the user cancels.
+    """
+    if type(prompt) is not str:
+        UIErrorWrapper.raise_error(UITypeError("prompt must be a string"))
+    if type(options) is not list and type(options) is not tuple:
+        UIErrorWrapper.raise_error(UITypeError("options must be a list or tuple"))
+    elif not all([type(x) is str for x in options]):
+        UIErrorWrapper.raise_error(UITypeError("options must be a list or tuple of strings"))
+    if currentstate is None:
+        currentstate = [False]*len(options)
+    elif type(currentstate) is not list or not all([type(x) is bool for x in currentstate]):
+        UIErrorWrapper.raise_error(UITypeError("currentstate must be a list of bools, if given"))
+    elif len(currentstate) != len(options):
+        UIErrorWrapper.raise_error(UIValueError("currentstate must be the same length as options, if given"))
+    else:
+        # Do not allow this function to modify the state in the calling workspace
+        currentstate = copy.copy(currentstate)
+
+    prompt += "\nEnter the number or multiple numbers separated by a space to toggle,\n" \
+        "'all' to toggle all, 'on' to set all on, 'off' to set all off,\n" \
+        "'a' to accept, or 'c' to cancel.\n" \
+        "Active options are marked with a *:"
+
+    print(prompt)
+    while True:
+        for i in range(len(options)):
+            if currentstate[i]:
+                state_str = "[*]"
+            else:
+                state_str = "[ ]"
+            print("{0}: {1} {2}".format(i+1, options[i], state_str))
+
+        user_ans = raw_input("(Type 'm' to see initial message again) --> ")
+        opt_inds = []
+        bad_opts = []
+        if user_ans.lower() == "m":
+            print("")
+            print(prompt)
+            continue
+        elif user_ans.lower() == "a":
+            return currentstate
+        elif user_ans.lower() == "c":
+            return None
+        elif user_ans.lower() == "all":
+            # Python3 range compatible
+            opt_inds = range(len(options))
+        elif user_ans.lower() == "on":
+            opt_inds = [i for i in range(len(options)) if not currentstate[i]]
+        elif user_ans.lower() == "off":
+            opt_inds = [i for i in range(len(options)) if currentstate[i]]
+        else:
+            user_ans = re.split("\s+", user_ans)
+            for u in user_ans:
+                try:
+                    opt = int(u)-1
+                except ValueError as err:
+                    # If the input cannot be parsed as an int, move on
+                    bad_opts.append(u)
+                else:
+                    if opt >= 0 and opt < len(options):
+                        opt_inds.append(opt)
+                    else:
+                        bad_opts.append(u)
+
+        if feedback_level > 1 and len(bad_opts) > 0:
+            print("Could not parse {0},\n"
+                  "out of range or not a number".format(", ".join(bad_opts)))
+
+        for i in opt_inds:
+            currentstate[i] = not currentstate[i]
