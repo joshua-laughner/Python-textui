@@ -10,16 +10,26 @@ to use the menu construct classes also provided in the pytui package.
 
 
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from __builtin__ import int
+from __future__ import print_function, division, absolute_import
+# If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for
+# Python 2 (http://python-future.org/compatible_idioms.html)
+# from builtins import int
 
 import datetime as dt
 import copy
 import re
-from jllutils import genutils
+import sys
+
 from .uierrors import UIErrorWrapper, UITypeError, UIValueError
+
+
+if sys.version_info.major == 2:
+    text_input = raw_input
+elif sys.version_info.major == 3:
+    text_input = input
+else:
+    raise NotImplementedError('No text input function defined for Python version {}'.format(sys.version_info.major))
+
 
 def user_input_list(prompt, options, returntype="value", currentvalue=None, emptycancel=True):
     """
@@ -62,7 +72,7 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
         print("  {2}{0}: {1}".format(i, options[i-1], currstr))
 
     while True:
-        userans = raw_input("Enter 1-{0}: ".format(len(options)))
+        userans = text_input("Enter 1-{0}: ".format(len(options)))
         if len(userans) == 0:
             if emptycancel:
                 return None
@@ -111,7 +121,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
         UIErrorWrapper.raise_error(UITypeError("If given, emptycancel must be a bool"))
 
     print(prompt)
-    print("Enter in the format yyyy-mm-dd or yyyy-dd-mm HH:MM:SS")
+    print("Enter in the format yyyy-mm-dd or yyyy-mm-dd HH:MM:SS")
     print("i.e. both 2016-04-01 and 2016-04-01 00:00:00 represent midnight on April 1st, 2016")
     if emptycancel:
         print("Entering nothing will cancel")
@@ -120,7 +130,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
         print("Current value is {0}".format(currentvalue))
 
     while True:
-        userdate = raw_input("--> ")
+        userdate = text_input("--> ")
         userdate = userdate.strip()
         if len(userdate) == 0:
             if emptycancel:
@@ -139,7 +149,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
         else:
             time = date_and_time[1].split(':')
             if len(time) != 3:
-                print('Time component must be of form HH:MM:SS (three 2-digit numbers separated by colons')
+                print('Time component must be of form HH:MM:SS (three 2-digit numbers separated by colons)')
                 continue
 
             try:
@@ -152,7 +162,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
 
         date = date_and_time[0].split("-")
         if len(date) != 3:
-            print("Date component must be of form yyyy-mm-dd (4-, 2-, and 2- digits separated by dashed")
+            print("Date component must be of form yyyy-mm-dd (4, 2, and 2 digits separated by dashes)")
             continue
 
         try:
@@ -166,7 +176,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
         # Take advantage of datetime's built in checking to be sure we have a valid date
         try:
             dateout = dt.datetime(yr,mn,dy,hour,min,sec)
-        except ValueError, e:
+        except ValueError as e:
             print("Problem with date/time entered: {0}".format(str(e)))
             continue
 
@@ -217,7 +227,7 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
 
     while True:
         if returntype is bool:
-            userans = raw_input("T/F: ").lower().strip()
+            userans = text_input("T/F: ").lower().strip()
             if userans == "t":
                 return True
             elif userans == "f":
@@ -227,7 +237,7 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
             else:
                 print("Option is a boolean. Must enter T or F.")
         else:
-            userans = raw_input("--> ").strip()
+            userans = text_input("--> ").strip()
             if len(userans) == 0 and emptycancel:
                 return None
             elif len(userans) == 0 and not emptycancel:
@@ -236,8 +246,9 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
                 try:
                     userans = returntype(userans)
                 except ValueError:
-                    print("Could not convert your input to {0}, try again".format(genutils.typestr(returntype)))
-                return userans
+                    print("Could not convert your input to {0}, try again".format(returntype.__name__))
+                else:
+                    return userans
 
 
 def user_input_yn(prompt, default="y"):
@@ -266,7 +277,7 @@ def user_input_yn(prompt, default="y"):
         else:
             defstr = " y/[n]"
             defaultans = False
-        userans = raw_input(prompt + defstr + ": ")
+        userans = text_input(prompt + defstr + ": ")
 
         if userans == "":
             return defaultans
@@ -327,7 +338,7 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
                 state_str = "[ ]"
             print("{0}: {1} {2}".format(i+1, options[i], state_str))
 
-        user_ans = raw_input("(Type 'm' to see initial message again) --> ")
+        user_ans = text_input("(Type 'm' to see initial message again) --> ")
         opt_inds = []
         bad_opts = []
         if user_ans.lower() == "m":

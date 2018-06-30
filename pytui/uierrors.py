@@ -4,11 +4,12 @@
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from __builtin__ import int
+# If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for
+# Python 2 (http://python-future.org/compatible_idioms.html)
+# from builtins import int
 
 import sys
 import traceback
-from jllutils import genutils
 import warnings
 import pdb
 
@@ -91,9 +92,8 @@ class UIErrorWrapper:
                 print("Traceback (most recent call last):", file=cls.err_log_stream)
                 for s in stack[:-1]:
                     print(s.rstrip(), file=cls.err_log_stream)
-                errstr = genutils.typestr(err)
-                ind = errstr.find(".")
-                print(errstr[ind+1:], ": ", err, sep="", file=cls.err_log_stream)
+                errstr = type(err).__name__
+                print(errstr, ": ", err, sep="", file=cls.err_log_stream)
                 exit(1)
             else:
                 print("")

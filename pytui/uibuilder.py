@@ -1,7 +1,9 @@
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from __builtin__ import int
+# If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for
+# Python 2 (http://python-future.org/compatible_idioms.html)
+# from builtins import int
 
 from .uierrors import UIValueError, UITypeError, UICallbackError, UIErrorWrapper
 from .uielements import user_input_date, user_input_value, user_input_list, user_input_yn, user_onoff_list
