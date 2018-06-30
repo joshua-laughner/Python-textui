@@ -15,10 +15,13 @@ from __future__ import print_function, division, absolute_import
 # Python 2 (http://python-future.org/compatible_idioms.html)
 # from builtins import int
 
+from collections import OrderedDict
 import datetime as dt
 import copy
 import re
 import sys
+
+import pdb
 
 from .uierrors import UIErrorWrapper, UITypeError, UIValueError
 
@@ -95,7 +98,7 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
         UIErrorWrapper.raise_error(UIValueError("Value '{0}' for keyword 'returntype' is not recognized".format(returntype)))
 
 
-def user_input_date(prompt, currentvalue=None, emptycancel=True):
+def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='day', smallest_allowed_time_part=None):
     """
     Request that the user input a date.
 
@@ -107,9 +110,19 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
     :param emptycancel: optional, defaults to True. A boolean determining whether an
     empty answer will cause this function to return None. If false, the user must enter
     a valid date to exit (not recommended for most cases).
+    :param req_time_part: optional, defaults to 'day'. A string describing the largest
+    required time part, must be one of: 'year', 'month', 'day', 'hour', 'minute', 'second'.
+    If this is set to 'minute' for example, then the user must input at least year, month,
+    day, hour, and minute, or it will be rejected.
+    :param smallest_allowed_time_part: optional, defaults to None. A string describing
+    the smallest piece of time the user is allowed to specify. Must be one of the same strings
+    as allowed for req_time_part, and must be the same or smaller piece of time than req_time_part.
+    For example, if this is set to 'minute', then the user may not include seconds in their
+    answer. If left as None, then it will be automatically set to the same as req_time_part,
+    effectively giving the user only one choice for how specific to make their time.
     :return: A datetime.datetime instance, or None.
     """
-    # TODO: use datetime strftime method
+
     # Prompts the user for a date in yyyy-mm-dd or yyyy-mm-dd HH:MM:SS format. Only input is a prompt describing
     # what the date is. Returns a datetime object. The currentvalue keyword can be used to display the current
     # setting, but it must be a datetime object as well. Returns none if user ever enters an empty string.
@@ -117,12 +130,33 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
         UIErrorWrapper.raise_error(UITypeError("If given, currentvalue must be a datetime.date or datetime.datetime instance"))
     elif type(currentvalue) is dt.date:
         currentvalue = dt.datetime(currentvalue.year, currentvalue.month, currentvalue.day)
+
     if type(emptycancel) is not bool:
         UIErrorWrapper.raise_error(UITypeError("If given, emptycancel must be a bool"))
 
+    # Must give the time formats as a list of tuples (instead of keyword-value pairs) to preserve order because
+    # at least in Python 2 **kwargs becomes a regular dict() and so loses order before OrderedDict even sees it.
+    time_formats = OrderedDict([('year', '%Y'), ('month', '%Y-%m'), ('day', '%Y-%m-%d'),
+                                ('hour', '%Y-%m-%d %H'), ('minute', '%Y-%m-%d %H:%M'), ('second', '%Y-%m-%d %H:%M:%S')])
+    if req_time_part not in time_formats:
+        UIErrorWrapper.raise_error(UITypeError('req_time_part must be one of: {}'.format(', '.join(time_formats.keys()))))
+    elif smallest_allowed_time_part not in time_formats and smallest_allowed_time_part is not None:
+        UIErrorWrapper.raise_error(UITypeError('smallest_allowed_time_part must be one of: {}'.format(', '.join(time_formats.keys()))))
+    else:
+        key_ind = time_formats.keys().index(req_time_part)
+        if smallest_allowed_time_part is None:
+            smallest_ind = key_ind + 1
+        else:
+            smallest_ind = time_formats.keys().index(smallest_allowed_time_part)+1
+
+        if smallest_ind <= key_ind:
+            UIErrorWrapper.raise_error(UIValueError('req_time_part must be a larger piece of time than smallest_allowed_time_part'))
+        allowed_time_fmts = time_formats.values()[key_ind:smallest_ind]
+        allowed_fmts_str = ', '.join([_human_readable_time_format(fmt) for fmt in allowed_time_fmts])
+
     print(prompt)
-    print("Enter in the format yyyy-mm-dd or yyyy-mm-dd HH:MM:SS")
-    print("i.e. both 2016-04-01 and 2016-04-01 00:00:00 represent midnight on April 1st, 2016")
+    print("Enter in one of the formats: {}".format(allowed_fmts_str))
+    print("Any omitted parts will be set to 0 or 1, as appropriate")
     if emptycancel:
         print("Entering nothing will cancel")
 
@@ -139,49 +173,30 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True):
                 print("You must enter a value")
                 continue
 
-        date_and_time = userdate.split(" ")
-        date_and_time = [s.strip() for s in date_and_time]
-        if len(date_and_time) == 1:
-            # No time passed, set to midnight
-            hour = 0
-            min = 0
-            sec = 0
-        else:
-            time = date_and_time[1].split(':')
-            if len(time) != 3:
-                print('Time component must be of form HH:MM:SS (three 2-digit numbers separated by colons)')
-                continue
+        matching_fmt = None
+        for fmt in allowed_time_fmts:
+            if len(userdate) == len(_human_readable_time_format(fmt)):
+                matching_fmt = fmt
+                break
 
-            try:
-                hour = int(time[0])
-                min = int(time[1])
-                sec = int(time[2])
-            except ValueError:
-                print("Error parsing time. Be sure only numbers 0-9 are used to define HH, MM, and SS")
-                continue
-
-        date = date_and_time[0].split("-")
-        if len(date) != 3:
-            print("Date component must be of form yyyy-mm-dd (4, 2, and 2 digits separated by dashes)")
+        if matching_fmt is None:
+            print('Wrong number of characters. Allowed formats are: {}'.format(allowed_fmts_str))
             continue
 
         try:
-            yr = int(date[0])
-            mn = int(date[1])
-            dy = int(date[2])
+            dateout = dt.datetime.strptime(userdate, matching_fmt)
         except ValueError:
-            print("Error parsing date. Be sure only numbers 0-9 are used to define yyyy, mm, and dd.")
-            continue
-
-        # Take advantage of datetime's built in checking to be sure we have a valid date
-        try:
-            dateout = dt.datetime(yr,mn,dy,hour,min,sec)
-        except ValueError as e:
-            print("Problem with date/time entered: {0}".format(str(e)))
-            continue
+            print('Cannot understand "{}" as "{}"'.format(userdate, matching_fmt))
 
         # If we get here, nothing went wrong
         return dateout
+
+
+def _human_readable_time_format(fmt):
+    translation_dict = {'%Y': 'yyyy', '%m': 'mm', '%d': 'dd', '%H': 'HH', '%M': 'MM', '%S': 'SS'}
+    for k, v in translation_dict.items():
+        fmt = fmt.replace(k, v)
+    return fmt
 
 
 def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,

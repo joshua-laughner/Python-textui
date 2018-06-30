@@ -87,14 +87,8 @@ class UIErrorWrapper:
         """
         if cls.do_throw_both and cls.do_throw_exceptions:
             if not cls.do_soft_exit:
-                stack = traceback.format_stack()
                 print("Error thrown using UIErrorWrapper", file=cls.err_log_stream)
-                print("Traceback (most recent call last):", file=cls.err_log_stream)
-                for s in stack[:-1]:
-                    print(s.rstrip(), file=cls.err_log_stream)
-                errstr = type(err).__name__
-                print(errstr, ": ", err, sep="", file=cls.err_log_stream)
-                exit(1)
+                raise(err)
             else:
                 print("")
                 print("*******************************")
@@ -103,7 +97,7 @@ class UIErrorWrapper:
                 print("the author with a bug report.")
                 print("*******************************")
                 print("")
-                exit(1)
+                sys.exit(1)
 
     @classmethod
     def warn(cls, msg):
