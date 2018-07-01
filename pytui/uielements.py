@@ -418,17 +418,22 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
             opt_inds = [i for i in range(len(options)) if currentstate[i]]
         else:
             user_ans = re.split("\s+", user_ans)
-            for u in user_ans:
+            for u_part in user_ans:
                 try:
-                    opt = int(u)-1
+                    u_list = [int(u)-1 for u in u_part.split('-')]
                 except ValueError as err:
                     # If the input cannot be parsed as an int, move on
-                    bad_opts.append(u)
+                    bad_opts.append(u_part)
                 else:
-                    if opt >= 0 and opt < len(options):
-                        opt_inds.append(opt)
+                    if len(u_list) == 1:
+                        opt = u_list
                     else:
-                        bad_opts.append(u)
+                        opt = [x for x in range(u_list[0], u_list[1] + 1)]
+
+                    if all([o >= 0 and o < len(options) for o in opt]):
+                        opt_inds += opt
+                    else:
+                        bad_opts.append(u_part)
 
         if feedback_level > 1 and len(bad_opts) > 0:
             print("Could not parse {0},\n"
