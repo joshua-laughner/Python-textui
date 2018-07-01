@@ -23,17 +23,17 @@ class UIErrorWrapper:
     package can thus control how exceptions and warnings deliberately issued
     by pytui are handled using the following class propeties:
 
-        do_throw_both: default True, if set to False suppresses both exceptions
+        do_throw_both: default ``True``, if set to ``False`` suppresses both exceptions
         and warnings issued by the UI functions.
 
-        do_throw_exceptions, do_throw_warnings: default True, these allow control
-        of exceptions and warnings separately. If set to False, they suppress
+        do_throw_exceptions, do_throw_warnings: default ``True``, these allow control
+        of exceptions and warnings separately. If set to ``False``, they suppress
         their respective messages.
 
-        do_soft_exit: default False, if set to True a simple message is displayed
+        do_soft_exit: default ``False``, if set to ``True`` a simple message is displayed
         prior to exiting rather than a full stack trace that might alarm users.
 
-        err_log_stream: defaults to sys.stderr, this can be set to other files or
+        err_log_stream: defaults to ``sys.stderr``, this can be set to other files or
         streams to, for example, allow you to send error messages to a log file
         that users can send in.
 
@@ -41,7 +41,7 @@ class UIErrorWrapper:
     any import statements (this prevents your settings from being overwritten by
     imported modules). Ideally, you could control this using some environmental
     variable or command line switch so that users could turn on error messages for
-    debugging reports, as:
+    debugging reports, as::
 
         from pytui.uierrors import UIErrorWrapper
         mydebug_flag = os.getenv('MY_DEBUG') > 0
@@ -53,14 +53,14 @@ class UIErrorWrapper:
             UIErrorWrapper.do_soft_exit = True
             UIErrorWrapper.do_throw_warnings = False
 
-    Caution is recommended when setting do_throw_both or do_throw_exceptions to False
+    Caution is recommended when setting ``do_throw_both`` or ``do_throw_exceptions`` to ``False``
     as this will turn off error checking in direct input to the UI functions (that
     is, input in your code, not the user input) which may simply lead to weirder errors
     deeper in the code.
 
 
     For those working on pytui itself, any exceptions or warnings should be issued
-    though this class using the class methods raise_error and warn.
+    though this class using the class methods ``raise_error`` and ``warn``.
     """
     do_throw_both = True
     do_throw_exceptions = True
@@ -79,10 +79,13 @@ class UIErrorWrapper:
         (classmethod) Wrapper method to raise exceptions only if the wrapper class is set to do so
 
         Call this method with the instance of the exception to raise, as in
-        UIErrorWrapper.raise_error(UITypeError("message to issue with error"))
-        Its behavior is modified by the class properties do_throw_both,
-        do_throw_exceptions, and do_soft_exit. See class docstring for details.
+        ``UIErrorWrapper.raise_error(UITypeError("message to issue with error"))``
+        Its behavior is modified by the class properties ``do_throw_both``,
+        ``do_throw_exceptions``, and ``do_soft_exit``. See class docstring for details.
+
         :param err: the instance of the exception to raise
+        :type err: Exception
+
         :return: nothing.
         """
         if cls.do_throw_both and cls.do_throw_exceptions:
@@ -105,10 +108,13 @@ class UIErrorWrapper:
         (classmethod) Wrapper method to issue warnings only if the wrapper class is set to do so
 
         Call this method with the message of the warning to issue, as
-        in UIErrorWrapper.warn("warning message to issue")
-        Its behavior is modified by the class properties do_throw_both
-        and do_throw_warnings, see class docstring for details.
+        in ``UIErrorWrapper.warn("warning message to issue")``
+        Its behavior is modified by the class properties ``do_throw_both``
+        and ``do_throw_warnings``, see class docstring for details.
+
         :param msg: The warning message to issue as a string
+        :type msg: str
+
         :return: nothing.
         """
         if cls.do_throw_both and cls.do_throw_warnings:
@@ -118,17 +124,32 @@ class UIErrorWrapper:
 class UIError(Exception):
     """
     Parent class for any errors thrown by the UI functions, thus users can catch
-    these errors with "try: except UIError:" to allow a program using this package
+    these errors with ``try: except UIError:`` to allow a program using this package
     to exit gracefully or otherwise handle the error.
     """
     pass
 
 
 class UITypeError(UIError):
+    """
+    A subclass of UIError intended for errors about a variable being the wrong type
+    """
     pass
 
 
 class UIValueError(UIError):
+    """
+    A subclass of UIError intended for errors about a variable having the wrong value.
+    """
+    pass
+
+
+class UIOptNoneError(UIError):
+    """
+    A subclass of UIError intended specifically for the ``opt_user_*`` functions in the
+    :mod:`pytui.uielements` module, to be raised when these functions receive a ``None``
+    type from their respective ``user_*`` function.
+    """
     pass
 
 

@@ -7,8 +7,6 @@ done on the user input and the loop will not exit if an invalid value was given.
 
 You are welcome to use these functions directly in your programs if you do not wish
 to use the menu construct classes also provided in the pytui package.
-
-
 """
 from __future__ import print_function, division, absolute_import
 # If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for
@@ -18,13 +16,10 @@ from __future__ import print_function, division, absolute_import
 from collections import OrderedDict
 import copy
 import datetime as dt
-from functools import wraps
 import re
 import sys
 
-import pdb
-
-from .uierrors import UIErrorWrapper, UITypeError, UIValueError
+from .uierrors import UIErrorWrapper, UITypeError, UIValueError, UIOptNoneError
 
 
 if sys.version_info.major == 2:
@@ -36,20 +31,22 @@ else:
 
 
 def user_input_list(prompt, options, returntype="value", currentvalue=None, emptycancel=True):
-    """
-    This function provides the user a list of choices to choose from, the user selects one by its number
+    """This function provides the user a list of choices to choose from, the user selects one by its number
 
-    :param prompt: The text prompt to display for the user (type = str)
-    :param options: The list of options to present (type = list or tuple)
-    :param returntype: optional, can be "value" or "index", "value" is default.
-    If set to "value", the return value will be the value of the option chosen. If
-    set to "index", the return value will be the index of the list chosen.
-    :param currentvalue: optional, defaults to None. Sets what the current value of
-    this option is. If one is given, it will be marked with a * in the list.
-    :param emptycancel: optional (type = bool), defaults to True. If true, then this
-     function will return None if no answer is chosen (but not if an invalid selection
-     is chosen). A message indicating that an empty answer will cancel is added to the prompt.
-     If false, the list of options will be re-presented if no answer given.
+    :param prompt: The text prompt to display for the user
+    :type prompt: str
+    :param options: The list of options to present
+    :type options: list or tuple
+    :param returntype: optional, can be "value" or "index", "value" is default. If set to "value", the return value
+        will be the value of the option chosen. If set to "index", the return value will be the index of the list
+        chosen.
+    :type returntype: str
+    :param currentvalue: optional, defaults to None. Sets what the current value of this option is. If one is given, it
+        will be marked with a * in the list.
+    :param emptycancel: optional (type = bool), defaults to True. If true, then this function will return None if no
+        answer is chosen (but not if an invalid selection is chosen). A message indicating that an empty answer will
+        cancel is added to the prompt. If false, the list of options will be re-presented if no answer given.
+    :type emptycancel: bool
     :return: either the value or index of the user choice (see returntype) or the type None.
     """
 
@@ -100,27 +97,30 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
 
 
 def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='day', smallest_allowed_time_part=None):
-    """
-    Request that the user input a date.
+    """Request that the user input a date.
 
     :param prompt: A string printed as the prompt; it should describe what date is
-    being requested.
-    :param currentvalue: optional, datetime.date or datetime.datetime instance. If
-    given, will print out the current value given. Useful when setting an option so
-    that the user knows what the current value is.
+        being requested.
+    :type prompt: str
+    :param currentvalue: optional, if given, will print out the current value given. Useful when setting an option so
+        that the user knows what the current value is.
+    :type currentvalue: datetime.date or datetime.datetime
     :param emptycancel: optional, defaults to True. A boolean determining whether an
-    empty answer will cause this function to return None. If false, the user must enter
-    a valid date to exit (not recommended for most cases).
+        empty answer will cause this function to return None. If false, the user must enter
+        a valid date to exit (not recommended for most cases).
+    :type emptycancel: bool
     :param req_time_part: optional, defaults to 'day'. A string describing the largest
-    required time part, must be one of: 'year', 'month', 'day', 'hour', 'minute', 'second'.
-    If this is set to 'minute' for example, then the user must input at least year, month,
-    day, hour, and minute, or it will be rejected.
+        required time part, must be one of: 'year', 'month', 'day', 'hour', 'minute', 'second'.
+        If this is set to 'minute' for example, then the user must input at least year, month,
+        day, hour, and minute, or it will be rejected.
+    :type req_time_part: str
     :param smallest_allowed_time_part: optional, defaults to None. A string describing
-    the smallest piece of time the user is allowed to specify. Must be one of the same strings
-    as allowed for req_time_part, and must be the same or smaller piece of time than req_time_part.
-    For example, if this is set to 'minute', then the user may not include seconds in their
-    answer. If left as None, then it will be automatically set to the same as req_time_part,
-    effectively giving the user only one choice for how specific to make their time.
+        the smallest piece of time the user is allowed to specify. Must be one of the same strings
+        as allowed for req_time_part, and must be the same or smaller piece of time than req_time_part.
+        For example, if this is set to 'minute', then the user may not include seconds in their
+        answer. If left as None, then it will be automatically set to the same as req_time_part,
+        effectively giving the user only one choice for how specific to make their time.
+    :type smallest_allowed_time_part: str
     :return: A datetime.datetime instance, or None.
     """
 
@@ -157,7 +157,9 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='
 
     print(prompt)
     print("Enter in one of the formats: {}".format(allowed_fmts_str))
-    print("Any omitted parts will be set to 0 or 1, as appropriate")
+    if len(allowed_time_fmts) > 1:
+        print("Any omitted parts will be set to 0 or 1, as appropriate")
+
     if emptycancel:
         print("Entering nothing will cancel")
 
@@ -194,6 +196,12 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='
 
 
 def _human_readable_time_format(fmt):
+    """Converts strptime format string into something a little more human readable
+
+    :param fmt: the strptime format string
+    :type fmt: str
+    :return: the human-readable string
+    """
     translation_dict = {'%Y': 'yyyy', '%m': 'mm', '%d': 'dd', '%H': 'HH', '%M': 'MM', '%S': 'SS'}
     for k, v in translation_dict.items():
         fmt = fmt.replace(k, v)
@@ -202,27 +210,37 @@ def _human_readable_time_format(fmt):
 
 def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
                      returntype=str, emptycancel=True):
-    """
-    Ask the user to input a value.
+    """Ask the user to input a value.
 
-    :param prompt: The prompt to give the user as a string
+    :param prompt: The prompt to give the user
+    :type prompt: str
+
     :param testfxn: optional, if given, should be a function that returns a boolean value.
-    Used to test if the value the user gave is valid. This can be a pre-defined function
-    or one created using the lambda syntax. This will be called after the user input is
-    converted to the returntype given (see below)
+        Used to test if the value the user gave is valid. This can be a pre-defined function
+        or one created using the lambda syntax. This will be called after the user input is
+        converted to the returntype given (see below)
+    :type testfxn: function
+
     :param testmsg: optional, if given, should be a message that describes the conditions
-    required by testfxn. If testfxn is given, this really should be as well, or the user
-    will just see "That is not an allowed value", which isn't very helpful.
+        required by testfxn. If testfxn is given, this really should be as well, or the user
+        will just see "That is not an allowed value", which isn't very helpful.
+    :type testmsg: str
+
     :param currval: optional, the current value of the option. If given, the value will
-    be printed after the prompt
+        be printed after the prompt
+
     :param returntype: optional, must be a type which can be used as a function to convert
-    a string to that type, e.g. int, bool, float, list. If the type is bool, this function
-    will require the user to enter T or F (or nothing if emptycancel is True). If not given,
-    the user input will be returned as a string.
-    :param emptycancel: optional, must be a boolean, defaults to True. If True, then the user
-    can enter an empty string, which will make this function return None.
-    :return: The user input value as the type specified by returntype, or None is emptycancel
-    is True and the user does not enter a value.
+        a string to that type, e.g. int, bool, float, list. If the type is bool, this function
+        will require the user to enter T or F (or nothing if emptycancel is True). If not given,
+        the user input will be returned as a string.
+    :type returntype: str
+
+    :param emptycancel: optional, defaults to True. If True, then the user
+        can enter an empty string, which will make this function return None.
+    :type emptycancel: bool
+
+    :return: The user input value as the type specified by returntype, or None if emptycancel
+        is True and the user does not enter a value.
     """
 
     if type(prompt) is not str:
@@ -278,16 +296,18 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
 
 
 def user_input_yn(prompt, default="y"):
-    """
-    Prompts the user with a yes/no question, returns True if answer is yes, False if answer is no.
+    """Prompts the user with a yes/no question, returns True if answer is yes, False if answer is no.
 
     This is similar to user_input_value with a bool
     return type, but handles it differently if the user does not enter a
     value; this function will return the default value rather than a None type
     or forcing the user to enter something
+
     :param prompt: The prompt string that the user should be shown
+    :type prompt: str
     :param default: optional, must be either the string "y" or "n". Sets the
-    default answer.
+        default answer.
+    :type default: bool
     :return: bool
     """
 
@@ -316,27 +336,32 @@ def user_input_yn(prompt, default="y"):
 
 
 def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, returntype="opts"):
-    """
-    Provides a list of toggleable options to the user
+    """Provides a list of toggleable options to the user
+
     Will print the prompt followed by the list of options provided. The user
     can interactively toggle each option on or off.
+
     :param prompt: A string prompting the user what to do. Will be followed
-    by further instructions on what user inputs are valid.
+        by further instructions on what user inputs are valid.
+    :type prompt: str
     :param options: A list or tuple of strings of the option names
-    :param currentstate: optional, a list of bools that describe the current
-     state of the options (on or off). If not given, all default to False.
-     Must be the same length as options. Is shallow copied internally so it
-     will not change the values in the calling function.
+    :type options: list or tuple
+    :param currentstate: optional, describe the current state of the options (on or off).
+        If not given, all default to False. Must be the same length as options. Is shallow
+        copied internally so it will not change the values in the calling function.
+    :type currentstate: list of bools
     :param feedback_level: optional, an integer describing how much feedback
-    to give the user. Defaults to 2, meaning that this function will print
-    out what user input it could not parse. Set to 0 to turn this off (1
-    reserved against future intermediate levels of feedback).
-    :param returntype: optional, a string determining what is return. Default is "opts",
-    which returns a list of the subset of options selected. May also be "bools", meaning
-    that a list of booleans the same length as options is returned, True for what options
-    the user selected.
-    :return: a list of bools with the new states of the options, or None if
-    the user cancels.
+        to give the user. Defaults to 2, meaning that this function will print
+        out what user input it could not parse. Set to 0 to turn this off (1
+        reserved against future intermediate levels of feedback).
+    :type feedback_level: int
+    :param returntype: optional, a string determining what is returned. Default is "opts",
+        which returns a list of the subset of options selected. May also be "bools", meaning
+        that a list of booleans the same length as options is returned, True for what options
+        the user selected.
+    :type returntype: str
+    :return: a list of options selected (returntype == "opts"), or a list of bools with the new
+        states of the options (returntype == "bools"), or None if the user cancels.
     """
     if type(prompt) is not str:
         UIErrorWrapper.raise_error(UITypeError("prompt must be a string"))
@@ -436,7 +461,7 @@ def _get_do_ask_fxn(ask_fxn):
         return ask_fxn
 
 
-def opt_user_input_list(prompt, value, options, do_ask_test=None, invalid_msg=None, **kwargs):
+def opt_user_input_list(prompt, value, options, do_ask_test=None, invalid_msg=None, error_on_none=True, **kwargs):
     """
     Wrapper around user_input_list that calls it only if an interactive choice is necessary.
 
@@ -444,19 +469,34 @@ def opt_user_input_list(prompt, value, options, do_ask_test=None, invalid_msg=No
     tests if that value indicates that a choice needs to be made, or if not, that it is a valid option. Typically,
     this would be used inside a function that has optional arguments that, if not given, should be asked interactively
     of the user.
+
     :param prompt: A string that is the prompt that will be given if the user needs to make an interactive choice
+    :type prompt: str
+
     :param value: the current value that will be tested if it means the user should be asked to choose an option or
-    if it is valid
+        if it is valid
+
     :param options: a list of allowed options, passed to user_input_list if needed.
+    :type options: list
+
     :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_list
-    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
-    user_input_list if value is None).
+        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+        user_input_list if value is None).
+    :type do_ask_test: function
+
     :param invalid_msg: optional, the message for the UIValueError raised if user_input_list is not called but value
-    is not in the options list. This can have two formatting markers, {value} and {opts}. {value} will be replaced
-    with the value given, {opts} will be replaced with a comma separated list of allowed options.
+        is not in the options list. This can have two formatting markers, {value} and {opts}. {value} will be replaced
+        with the value given, {opts} will be replaced with a comma separated list of allowed options.
+    :type invalid_msg: str
+
+    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError
+        is raised.
+    :type error_on_none: bool
+
     :param kwargs: additional keyword arguments recognized by user_input_list.
+
     :return: the value selected, or the value given if user_input_list is not called. Raises a ValueError if value
-    is not in options and user_input_list is not called.
+        is not in options and user_input_list is not called.
     """
 
     do_ask_test = _get_do_ask_fxn(do_ask_test)
@@ -469,55 +509,92 @@ def opt_user_input_list(prompt, value, options, do_ask_test=None, invalid_msg=No
 
     response = _optional_input(user_input_list, prompt, value, do_ask_test, input_valid_fxn, invalid_msg, options, **kwargs)
 
+    if response is None and error_on_none:
+        UIErrorWrapper.raise_error(UIOptNoneError('The user failed to provide a value'))
+
     if 'returntype' in kwargs and kwargs['returntype'] == 'index' and response in options:
         response = options.index(response)
 
     return response
 
 
-def opt_user_input_date(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, **kwargs):
+def opt_user_input_date(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, error_on_none=True, **kwargs):
     """
     Wrapper around user_input_date that calls it only if an interactive input is necessary.
+
     :param prompt: A string that is the prompt that will be given if the user needs enter a date
+    :type prompt: str
+
     :param value: the current value of the date.
+
     :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_date
-    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
-    user_input_date if value is None).
+        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+        user_input_date if value is None).
+    :type do_ask_test: function
+
     :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean
-    indicating if value is valid. By default, this checks that value is an instance of datetime.date or datetime.datetime.
+        indicating if value is valid. By default, this checks that value is an instance of datetime.date or datetime.datetime.
+    :type is_valid_test: function
+
     :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.
-    If is_valid_test is given, this must also be given.
+        If is_valid_test is given, this must also be given.
+    :type invalid_msg: str
+
+    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError
+        is raised.
+    :type error_on_none: bool
+
     :param kwargs: additional keyword arguments to pass through to user_input_date.
+
     :return: the date, either given as value or chosen by the user.
     """
     do_ask_test = _get_do_ask_fxn(do_ask_test)
     if is_valid_test is None:
         is_valid_test = lambda value: isinstance(value, (dt.date, dt.datetime))
-    if is_valid_test is not None and invalid_msg is None:
+    elif is_valid_test is not None and invalid_msg is None:
         UIErrorWrapper.raise_error(UIValueError('If is_valid_test is given, invalid_msg should be to so that the error '
                                                 'message matches the test'))
     elif invalid_msg is None:
         invalid_msg = 'The given value must be an instance of datetime.date or datetime.datetime' if invalid_msg is None else invalid_msg
 
-    return _optional_input(user_input_date, prompt, value, do_ask_test, is_valid_test, invalid_msg, **kwargs)
+    response = _optional_input(user_input_date, prompt, value, do_ask_test, is_valid_test, invalid_msg, **kwargs)
+    if response is None and error_on_none:
+        UIErrorWrapper.raise_error(UIOptNoneError('The user failed to provide a value'))
+
+    return response
 
 
-def opt_user_input_value(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, **kwargs):
+def opt_user_input_value(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, error_on_none=True, **kwargs):
     """
     Wrapper around user_input_value that calls it only if an interactive input is necessary
+
     :param prompt: A string that is the prompt that will be given if the user needs enter a value
+    :type prompt: str
+
     :param value: the current value
+
     :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_value
-    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
-    user_input_value if value is None).
+        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+        user_input_value if value is None).
+    :type do_ask_test: function
+
     :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean
-    indicating if value is valid. If not given, no check of the value will be done. This will also be passed through to
-    user_input_value as testfxn, ensuring that the criteria for the given value is the same in both.
+        indicating if value is valid. If not given, no check of the value will be done. This will also be passed through to
+        user_input_value as testfxn, ensuring that the criteria for the given value is the same in both.
+    :type is_valid_test: function
+
     :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.
-    If is_valid_test is given, this must also be given. This will be passed through to user_input_valid as testmsg
-    so that the error message is consistent.
+        If is_valid_test is given, this must also be given. This will be passed through to user_input_valid as testmsg
+        so that the error message is consistent.
+    :type invalid_msg: str
+
     :param kwargs: additional keyword arguments to pass through to user_input_value, except testfxn and testmsg,
-    which are already handled by is_valid_test and invalid_msg, respectively.
+        which are already handled by is_valid_test and invalid_msg, respectively.
+
+    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError
+        is raised.
+    :type error_on_none: bool
+
     :return: the value, either input as value or entered by the user.
     """
     do_ask_test = _get_do_ask_fxn(do_ask_test)
@@ -528,19 +605,30 @@ def opt_user_input_value(prompt, value, do_ask_test=None, is_valid_test=None, in
 
     # Explicitly make testfxn and testmsg for user_input_value the same as the valid test and message used by this
     # function
-    return _optional_input(user_input_value, prompt, value, do_ask_test, is_valid_test, invalid_msg,
+    response = _optional_input(user_input_value, prompt, value, do_ask_test, is_valid_test, invalid_msg,
                            testfxn=is_valid_test, testmsg=invalid_msg, **kwargs)
+    if response is None and error_on_none:
+        UIErrorWrapper.raise_error(UIOptNoneError('The user failed to provide a value'))
+
+    return response
 
 
 def opt_user_input_yn(prompt, value, do_ask_test=None, **kwargs):
     """
     Wrapper around user_input_yn that calls it only if an interactive choice is required.
+
     :param prompt: A string that is the prompt that will be given if the user needs to choose interactively
+    :type prompt: str
+
     :param value: the current value. If it does not pass do_ask_test and is not a boolean, an error will be raised
+
     :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_yn
-    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
-    user_input_yn if value is None).
+        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+        user_input_yn if value is None).
+    :type do_ask_test: function
+
     :param kwargs: additional keyword arguments to pass through to user_input_yn
+
     :return: the value, either input as value or chosen by the user.
     """
     do_ask_test = _get_do_ask_fxn(do_ask_test)
@@ -551,23 +639,36 @@ def opt_user_input_yn(prompt, value, do_ask_test=None, **kwargs):
 def opt_user_onoff_list(prompt, value, options, do_ask_test=None, returntype='opts', value_name='The value', **kwargs):
     """
     Wrapper around user_onoff_list that calls it only if an interactive choice is required.
+
     :param prompt: A string that is the prompt that will be given if the user needs to choose interactively
+    :type prompt: str
+
     :param value: the current value. If this does not pass do_ask_test, then it must be a list or tuple, of what depends
-    on returntype
+        on returntype
+
     :param options: the list of options to choose from.
+    :type options: list
+
     :param do_ask_test: optional, a function that should take one input (value) and return True if user_onoff_list
-    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
-    user_onoff_list if value is None).
+        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+        user_onoff_list if value is None).
+    :type do_ask_test: function
+
     :param returntype: optional, either the string "opts" or "bools". The default is "opts", which is the reverse of
-    user_onoff_list; it is assumed that this function is more likely to be used if a list of options is more likely to
-    be passed as an argument than a list of booleans.
+        user_onoff_list; it is assumed that this function is more likely to be used if a list of options is more likely to
+        be passed as an argument than a list of booleans.
+    :type returntype: str
+
     :param value_name: optional, but recommended: this will be inserted into the error message raised if value does not
-    pass do_ask_test and is not the right format for the value of returntype as the name of the parameter that is wrong.
-    Otherwise, it just say "The value", which isn't very informative for your user.
+        pass do_ask_test and is not the right format for the value of returntype as the name of the parameter that is wrong.
+        Otherwise, it just say "The value", which isn't very informative for your user.
+    :type value_name: str
+
     :param kwargs: additional keyword arguments to pass through to user_onoff_list, except returntype, which
-    is already passed automatically.
+        is already passed automatically.
+
     :return: either a list of booleans the same length as options or a list of the subset of options selected,
-    depending on the value of returntype. Will either be the input value, or the user's choice.
+        depending on the value of returntype. Will either be the input value, or the user's choice.
     """
     do_ask_test = _get_do_ask_fxn(do_ask_test)
 
