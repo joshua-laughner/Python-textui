@@ -153,6 +153,10 @@ class UIOptNoneError(UIError):
     pass
 
 
+class UITermError(UIError):
+    pass
+
+
 class UICallbackError(UIError):
     def __init__(self, callback):
         message = "A callback has not returned a new _CallBack instance.\n" \

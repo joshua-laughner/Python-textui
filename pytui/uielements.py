@@ -19,34 +19,49 @@ import datetime as dt
 import re
 import sys
 
+from .uiutils import print_in_columns
 from .uierrors import UIErrorWrapper, UITypeError, UIValueError, UIOptNoneError
 
 
 if sys.version_info.major == 2:
     text_input = raw_input
+    from backports.shutil_get_terminal_size import get_terminal_size
 elif sys.version_info.major == 3:
     text_input = input
+    from shutil import get_terminal_size
 else:
     raise NotImplementedError('No text input function defined for Python version {}'.format(sys.version_info.major))
 
 
-def user_input_list(prompt, options, returntype="value", currentvalue=None, emptycancel=True):
+def user_input_list(prompt, options, returntype="value", currentvalue=None, emptycancel=True, printcols=True, **printcolargs):
     """This function provides the user a list of choices to choose from, the user selects one by its number
 
     :param prompt: The text prompt to display for the user
     :type prompt: str
+
     :param options: The list of options to present
     :type options: list or tuple
+
     :param returntype: optional, can be "value" or "index", "value" is default. If set to "value", the return value
         will be the value of the option chosen. If set to "index", the return value will be the index of the list
         chosen.
     :type returntype: str
+
     :param currentvalue: optional, defaults to None. Sets what the current value of this option is. If one is given, it
         will be marked with a * in the list.
-    :param emptycancel: optional (type = bool), defaults to True. If true, then this function will return None if no
+
+    :param emptycancel: optional, defaults to ``True``. If ``True``, then this function will return None if no
         answer is chosen (but not if an invalid selection is chosen). A message indicating that an empty answer will
-        cancel is added to the prompt. If false, the list of options will be re-presented if no answer given.
+        cancel is added to the prompt. If ``False``, the list of options will be re-presented if no answer given.
     :type emptycancel: bool
+
+    :param printcols: optional, controls whether the individual options should be spread out across the terminal in
+        columns (``True``) or all printed in one column (``False``).
+    :type printcols: bool
+
+    :param printcolargs: keyword arguments to be passed through to :func:`pytui.uiutils.print_in_columns`. Only has
+        an effect if ``printcols`` is ``True``.
+
     :return: either the value or index of the user choice (see returntype) or the type None.
     """
 
@@ -65,12 +80,19 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
         print("A empty answer will cancel.")
     if currentvalue is not None:
         print("The current value is marked with a *")
+
+    entries = []
     for i in range(1, len(options)+1):
         if currentvalue is not None and options[i-1] == currentvalue:
             currstr = "*"
         else:
             currstr = " "
-        print("  {2}{0}: {1}".format(i, options[i-1], currstr))
+        entries.append("  {2}{0}: {1}".format(i, options[i-1], currstr))
+
+    if printcols:
+        print_in_columns(entries, **printcolargs)
+    else:
+        print('\n'.join(entries))
 
     while True:
         userans = text_input("Enter 1-{0}: ".format(len(options)))
@@ -335,7 +357,7 @@ def user_input_yn(prompt, default="y"):
             print("Enter y or n only. ", end="")
 
 
-def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, returntype="opts"):
+def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, returntype="opts", printcols=True, **printcolargs):
     """Provides a list of toggleable options to the user
 
     Will print the prompt followed by the list of options provided. The user
@@ -344,22 +366,34 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
     :param prompt: A string prompting the user what to do. Will be followed
         by further instructions on what user inputs are valid.
     :type prompt: str
+
     :param options: A list or tuple of strings of the option names
     :type options: list or tuple
+
     :param currentstate: optional, describe the current state of the options (on or off).
         If not given, all default to False. Must be the same length as options. Is shallow
         copied internally so it will not change the values in the calling function.
     :type currentstate: list of bools
+
     :param feedback_level: optional, an integer describing how much feedback
         to give the user. Defaults to 2, meaning that this function will print
         out what user input it could not parse. Set to 0 to turn this off (1
         reserved against future intermediate levels of feedback).
     :type feedback_level: int
+
     :param returntype: optional, a string determining what is returned. Default is "opts",
         which returns a list of the subset of options selected. May also be "bools", meaning
         that a list of booleans the same length as options is returned, True for what options
         the user selected.
     :type returntype: str
+
+    :param printcols: optional, controls whether the individual options should be spread out
+        across the terminal in columns (``True``) or all printed in one column (``False``).
+    :type printcols: bool
+
+    :param printcolargs: keyword arguments to be passed through to :func:`pytui.uiutils.print_in_columns`. Only has
+        an effect if ``printcols`` is ``True``.
+
     :return: a list of options selected (returntype == "opts"), or a list of bools with the new
         states of the options (returntype == "bools"), or None if the user cancels.
     """
@@ -386,12 +420,18 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
 
     print(prompt)
     while True:
+        entries = []
         for i in range(len(options)):
             if currentstate[i]:
                 state_str = "[*]"
             else:
                 state_str = "[ ]"
-            print("{0}: {1} {2}".format(i+1, options[i], state_str))
+            entries.append("{0}: {1} {2}".format(i+1, options[i], state_str))
+
+        if printcols:
+            print_in_columns(entries, **printcolargs)
+        else:
+            print('\n'.join(entries))
 
         user_ans = text_input("(Type 'm' to see initial message again) --> ")
         opt_inds = []
