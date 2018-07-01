@@ -16,8 +16,9 @@ from __future__ import print_function, division, absolute_import
 # from builtins import int
 
 from collections import OrderedDict
-import datetime as dt
 import copy
+import datetime as dt
+from functools import wraps
 import re
 import sys
 
@@ -207,9 +208,11 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
     :param prompt: The prompt to give the user as a string
     :param testfxn: optional, if given, should be a function that returns a boolean value.
     Used to test if the value the user gave is valid. This can be a pre-defined function
-    or one created using the lambda syntax.
+    or one created using the lambda syntax. This will be called after the user input is
+    converted to the returntype given (see below)
     :param testmsg: optional, if given, should be a message that describes the conditions
-    required by testfxn
+    required by testfxn. If testfxn is given, this really should be as well, or the user
+    will just see "That is not an allowed value", which isn't very helpful.
     :param currval: optional, the current value of the option. If given, the value will
     be printed after the prompt
     :param returntype: optional, must be a type which can be used as a function to convert
@@ -235,6 +238,11 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
         UIErrorWrapper.warn("If you specify a testfxn but no testmsg it will not be clear to the user what is wrong")
     if type(emptycancel) is not bool:
         UIErrorWrapper.raise_error(UITypeError("If given, emptycancel must be a bool"))
+
+    if testfxn is None:
+        testfxn = lambda value: True
+    if testmsg is None:
+        testmsg = 'That is not an allowed value'
 
     print(prompt)
     if currval is not None:
@@ -263,7 +271,10 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
                 except ValueError:
                     print("Could not convert your input to {0}, try again".format(returntype.__name__))
                 else:
-                    return userans
+                    if testfxn(userans):
+                        return userans
+                    else:
+                        print(testmsg)
 
 
 def user_input_yn(prompt, default="y"):
@@ -304,7 +315,7 @@ def user_input_yn(prompt, default="y"):
             print("Enter y or n only. ", end="")
 
 
-def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
+def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, returntype="opts"):
     """
     Provides a list of toggleable options to the user
     Will print the prompt followed by the list of options provided. The user
@@ -320,6 +331,10 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
     to give the user. Defaults to 2, meaning that this function will print
     out what user input it could not parse. Set to 0 to turn this off (1
     reserved against future intermediate levels of feedback).
+    :param returntype: optional, a string determining what is return. Default is "opts",
+    which returns a list of the subset of options selected. May also be "bools", meaning
+    that a list of booleans the same length as options is returned, True for what options
+    the user selected.
     :return: a list of bools with the new states of the options, or None if
     the user cancels.
     """
@@ -340,8 +355,8 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
         currentstate = copy.copy(currentstate)
 
     prompt += "\nEnter the number or multiple numbers separated by a space to toggle,\n" \
-        "'all' to toggle all, 'on' to set all on, 'off' to set all off,\n" \
-        "'a' to accept, or 'c' to cancel.\n" \
+        "'a' or 'all' to toggle all, 'on' to set all on, 'off' to set all off,\n" \
+        "'r' to accept and return, or 'c' to cancel and return.\n" \
         "Active options are marked with a *:"
 
     print(prompt)
@@ -360,11 +375,16 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
             print("")
             print(prompt)
             continue
-        elif user_ans.lower() == "a":
-            return currentstate
+        elif user_ans.lower() == "r":
+            if returntype == "bools":
+                return currentstate
+            elif returntype == "opts":
+                return [opt for i, opt in enumerate(options) if currentstate[i]]
+            else:
+                UIErrorWrapper.raise_error(NotImplementedError('No return method implemented for returntype == "{}"'.format(returntype)))
         elif user_ans.lower() == "c":
             return None
-        elif user_ans.lower() == "all":
+        elif user_ans.lower() == "all" or user_ans.lower() == "a":
             # Python3 range compatible
             opt_inds = range(len(options))
         elif user_ans.lower() == "on":
@@ -391,3 +411,187 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2):
 
         for i in opt_inds:
             currentstate[i] = not currentstate[i]
+
+
+def _optional_input(user_input_fxn, prompt, value, do_ask_fxn, input_valid_fxn, input_invalid_msg, *args, **kwargs):
+    """
+    Internal function that maintains the functionality common to all the opt_* functions.
+    :return:
+    """
+    if do_ask_fxn(value):
+        return user_input_fxn(prompt, *args, **kwargs)
+    elif not input_valid_fxn(value):
+        UIErrorWrapper.raise_error(UIValueError(input_invalid_msg.format(value=value)))
+    else:
+        return value
+
+
+def _get_do_ask_fxn(ask_fxn):
+    def _default_do_ask_fxn(value):
+        return value is None
+
+    if ask_fxn is None:
+        return _default_do_ask_fxn
+    else:
+        return ask_fxn
+
+
+def opt_user_input_list(prompt, value, options, do_ask_test=None, invalid_msg=None, **kwargs):
+    """
+    Wrapper around user_input_list that calls it only if an interactive choice is necessary.
+
+    This function takes mostly the same arguments as user_input_list, but in addition takes an existing value and
+    tests if that value indicates that a choice needs to be made, or if not, that it is a valid option. Typically,
+    this would be used inside a function that has optional arguments that, if not given, should be asked interactively
+    of the user.
+    :param prompt: A string that is the prompt that will be given if the user needs to make an interactive choice
+    :param value: the current value that will be tested if it means the user should be asked to choose an option or
+    if it is valid
+    :param options: a list of allowed options, passed to user_input_list if needed.
+    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_list
+    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+    user_input_list if value is None).
+    :param invalid_msg: optional, the message for the UIValueError raised if user_input_list is not called but value
+    is not in the options list. This can have two formatting markers, {value} and {opts}. {value} will be replaced
+    with the value given, {opts} will be replaced with a comma separated list of allowed options.
+    :param kwargs: additional keyword arguments recognized by user_input_list.
+    :return: the value selected, or the value given if user_input_list is not called. Raises a ValueError if value
+    is not in options and user_input_list is not called.
+    """
+
+    do_ask_test = _get_do_ask_fxn(do_ask_test)
+
+    input_valid_fxn = lambda value: value in options
+    if invalid_msg is None:
+        invalid_msg = 'The value {{value}} is invalid. It must be one of: {opts}'.format(opts=', '.join(options))
+    else:
+        invalid_msg = invalid_msg.format(value='{value}', opts=', '.join(options))
+
+    response = _optional_input(user_input_list, prompt, value, do_ask_test, input_valid_fxn, invalid_msg, options, **kwargs)
+
+    if 'returntype' in kwargs and kwargs['returntype'] == 'index' and response in options:
+        response = options.index(response)
+
+    return response
+
+
+def opt_user_input_date(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, **kwargs):
+    """
+    Wrapper around user_input_date that calls it only if an interactive input is necessary.
+    :param prompt: A string that is the prompt that will be given if the user needs enter a date
+    :param value: the current value of the date.
+    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_date
+    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+    user_input_date if value is None).
+    :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean
+    indicating if value is valid. By default, this checks that value is an instance of datetime.date or datetime.datetime.
+    :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.
+    If is_valid_test is given, this must also be given.
+    :param kwargs: additional keyword arguments to pass through to user_input_date.
+    :return: the date, either given as value or chosen by the user.
+    """
+    do_ask_test = _get_do_ask_fxn(do_ask_test)
+    if is_valid_test is None:
+        is_valid_test = lambda value: isinstance(value, (dt.date, dt.datetime))
+    if is_valid_test is not None and invalid_msg is None:
+        UIErrorWrapper.raise_error(UIValueError('If is_valid_test is given, invalid_msg should be to so that the error '
+                                                'message matches the test'))
+    elif invalid_msg is None:
+        invalid_msg = 'The given value must be an instance of datetime.date or datetime.datetime' if invalid_msg is None else invalid_msg
+
+    return _optional_input(user_input_date, prompt, value, do_ask_test, is_valid_test, invalid_msg, **kwargs)
+
+
+def opt_user_input_value(prompt, value, do_ask_test=None, is_valid_test=None, invalid_msg=None, **kwargs):
+    """
+    Wrapper around user_input_value that calls it only if an interactive input is necessary
+    :param prompt: A string that is the prompt that will be given if the user needs enter a value
+    :param value: the current value
+    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_value
+    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+    user_input_value if value is None).
+    :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean
+    indicating if value is valid. If not given, no check of the value will be done. This will also be passed through to
+    user_input_value as testfxn, ensuring that the criteria for the given value is the same in both.
+    :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.
+    If is_valid_test is given, this must also be given. This will be passed through to user_input_valid as testmsg
+    so that the error message is consistent.
+    :param kwargs: additional keyword arguments to pass through to user_input_value, except testfxn and testmsg,
+    which are already handled by is_valid_test and invalid_msg, respectively.
+    :return: the value, either input as value or entered by the user.
+    """
+    do_ask_test = _get_do_ask_fxn(do_ask_test)
+    if is_valid_test is not None and invalid_msg is None:
+        UIErrorWrapper.raise_error(UIValueError('If is_valid_test is given, invalid_msg must be as well'))
+    elif is_valid_test is None:
+        is_valid_test = lambda val: True
+
+    # Explicitly make testfxn and testmsg for user_input_value the same as the valid test and message used by this
+    # function
+    return _optional_input(user_input_value, prompt, value, do_ask_test, is_valid_test, invalid_msg,
+                           testfxn=is_valid_test, testmsg=invalid_msg, **kwargs)
+
+
+def opt_user_input_yn(prompt, value, do_ask_test=None, **kwargs):
+    """
+    Wrapper around user_input_yn that calls it only if an interactive choice is required.
+    :param prompt: A string that is the prompt that will be given if the user needs to choose interactively
+    :param value: the current value. If it does not pass do_ask_test and is not a boolean, an error will be raised
+    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_yn
+    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+    user_input_yn if value is None).
+    :param kwargs: additional keyword arguments to pass through to user_input_yn
+    :return: the value, either input as value or chosen by the user.
+    """
+    do_ask_test = _get_do_ask_fxn(do_ask_test)
+    invalid_msg = 'The given value must be a boolean'
+    return _optional_input(user_input_yn, prompt, value, do_ask_test, lambda x: isinstance(x, bool), invalid_msg, **kwargs)
+
+
+def opt_user_onoff_list(prompt, value, options, do_ask_test=None, returntype='opts', value_name='The value', **kwargs):
+    """
+    Wrapper around user_onoff_list that calls it only if an interactive choice is required.
+    :param prompt: A string that is the prompt that will be given if the user needs to choose interactively
+    :param value: the current value. If this does not pass do_ask_test, then it must be a list or tuple, of what depends
+    on returntype
+    :param options: the list of options to choose from.
+    :param do_ask_test: optional, a function that should take one input (value) and return True if user_onoff_list
+    should be called to ask the user what value to use. By default, tests if value is None (i.e. will call
+    user_onoff_list if value is None).
+    :param returntype: optional, either the string "opts" or "bools". The default is "opts", which is the reverse of
+    user_onoff_list; it is assumed that this function is more likely to be used if a list of options is more likely to
+    be passed as an argument than a list of booleans.
+    :param value_name: optional, but recommended: this will be inserted into the error message raised if value does not
+    pass do_ask_test and is not the right format for the value of returntype as the name of the parameter that is wrong.
+    Otherwise, it just say "The value", which isn't very informative for your user.
+    :param kwargs: additional keyword arguments to pass through to user_onoff_list, except returntype, which
+    is already passed automatically.
+    :return: either a list of booleans the same length as options or a list of the subset of options selected,
+    depending on the value of returntype. Will either be the input value, or the user's choice.
+    """
+    do_ask_test = _get_do_ask_fxn(do_ask_test)
+
+    def opt_valid_test(val):
+        if not isinstance(val, (list, tuple)):
+            return False
+        else:
+            return all([v in options for v in val])
+
+    def bool_valid_test(val):
+        if not isinstance(val, (list, tuple)):
+            return False
+        else:
+            return all([isinstance(v, bool) for v in val]) and len(val) == len(options)
+
+    if returntype == 'opts':
+        is_valid_test = opt_valid_test
+        invalid_message = '{} must be a list or tuple containing a subset of the following: {}'.format(
+            value_name, ', '.join(options)
+        )
+    elif returntype == 'bools':
+        is_valid_test = bool_valid_test
+        invalid_message = '{} must be a list or tuple of booleans the same length as options ({})'.format(value_name, len(options))
+    else:
+        UIErrorWrapper.raise_error(ValueError('returntype == "{}" is not permitted'.format(returntype)))
+
+    return _optional_input(user_onoff_list, prompt, value, do_ask_test, is_valid_test, invalid_message, options, **kwargs)
