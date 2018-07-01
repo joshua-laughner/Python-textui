@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pytui.uierrors &#8212; pytui 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pytui.uierrors</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for</span>
+<span class="c1"># Python 2 (http://python-future.org/compatible_idioms.html)</span>
+<span class="c1"># from builtins import int</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">pdb</span>
+
+
+<div class="viewcode-block" id="UIErrorWrapper"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIErrorWrapper">[docs]</a><span class="k">class</span> <span class="nc">UIErrorWrapper</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class used to control exception raising in UI functions.</span>
+
+<span class="sd">    This class is used to wrap UI error calls so that they can be deactivated</span>
+<span class="sd">    when a UI driven program is released to users. Developers using the pytui</span>
+<span class="sd">    package can thus control how exceptions and warnings deliberately issued</span>
+<span class="sd">    by pytui are handled using the following class propeties:</span>
+
+<span class="sd">        do_throw_both: default ``True``, if set to ``False`` suppresses both exceptions</span>
+<span class="sd">        and warnings issued by the UI functions.</span>
+
+<span class="sd">        do_throw_exceptions, do_throw_warnings: default ``True``, these allow control</span>
+<span class="sd">        of exceptions and warnings separately. If set to ``False``, they suppress</span>
+<span class="sd">        their respective messages.</span>
+
+<span class="sd">        do_soft_exit: default ``False``, if set to ``True`` a simple message is displayed</span>
+<span class="sd">        prior to exiting rather than a full stack trace that might alarm users.</span>
+
+<span class="sd">        err_log_stream: defaults to ``sys.stderr``, this can be set to other files or</span>
+<span class="sd">        streams to, for example, allow you to send error messages to a log file</span>
+<span class="sd">        that users can send in.</span>
+
+<span class="sd">    The recommended use is that you set these in the top level of your program after</span>
+<span class="sd">    any import statements (this prevents your settings from being overwritten by</span>
+<span class="sd">    imported modules). Ideally, you could control this using some environmental</span>
+<span class="sd">    variable or command line switch so that users could turn on error messages for</span>
+<span class="sd">    debugging reports, as::</span>
+
+<span class="sd">        from pytui.uierrors import UIErrorWrapper</span>
+<span class="sd">        mydebug_flag = os.getenv(&#39;MY_DEBUG&#39;) &gt; 0</span>
+<span class="sd">        if mydebug_flag:</span>
+<span class="sd">            UIErrorWrapper.do_soft_exit = False</span>
+<span class="sd">            # Warnings are not covered by the soft exit</span>
+<span class="sd">            UIErrorWrapper.do_throw_warnings = True</span>
+<span class="sd">        else:</span>
+<span class="sd">            UIErrorWrapper.do_soft_exit = True</span>
+<span class="sd">            UIErrorWrapper.do_throw_warnings = False</span>
+
+<span class="sd">    Caution is recommended when setting ``do_throw_both`` or ``do_throw_exceptions`` to ``False``</span>
+<span class="sd">    as this will turn off error checking in direct input to the UI functions (that</span>
+<span class="sd">    is, input in your code, not the user input) which may simply lead to weirder errors</span>
+<span class="sd">    deeper in the code.</span>
+
+
+<span class="sd">    For those working on pytui itself, any exceptions or warnings should be issued</span>
+<span class="sd">    though this class using the class methods ``raise_error`` and ``warn``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_throw_both</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">do_throw_exceptions</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">do_throw_warnings</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">do_soft_exit</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">err_log_stream</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="UIErrorWrapper.raise_error"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIErrorWrapper.raise_error">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">raise_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (classmethod) Wrapper method to raise exceptions only if the wrapper class is set to do so</span>
+
+<span class="sd">        Call this method with the instance of the exception to raise, as in</span>
+<span class="sd">        ``UIErrorWrapper.raise_error(UITypeError(&quot;message to issue with error&quot;))``</span>
+<span class="sd">        Its behavior is modified by the class properties ``do_throw_both``,</span>
+<span class="sd">        ``do_throw_exceptions``, and ``do_soft_exit``. See class docstring for details.</span>
+
+<span class="sd">        :param err: the instance of the exception to raise</span>
+<span class="sd">        :type err: Exception</span>
+
+<span class="sd">        :return: nothing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">do_throw_both</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">do_throw_exceptions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">do_soft_exit</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error thrown using UIErrorWrapper&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">err_log_stream</span><span class="p">)</span>
+                <span class="k">raise</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*******************************&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;An internal error has occurred.&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;This program will exit. Contact&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;the author with a bug report.&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*******************************&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UIErrorWrapper.warn"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIErrorWrapper.warn">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">warn</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (classmethod) Wrapper method to issue warnings only if the wrapper class is set to do so</span>
+
+<span class="sd">        Call this method with the message of the warning to issue, as</span>
+<span class="sd">        in ``UIErrorWrapper.warn(&quot;warning message to issue&quot;)``</span>
+<span class="sd">        Its behavior is modified by the class properties ``do_throw_both``</span>
+<span class="sd">        and ``do_throw_warnings``, see class docstring for details.</span>
+
+<span class="sd">        :param msg: The warning message to issue as a string</span>
+<span class="sd">        :type msg: str</span>
+
+<span class="sd">        :return: nothing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">do_throw_both</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">do_throw_warnings</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="UIError"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIError">[docs]</a><span class="k">class</span> <span class="nc">UIError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parent class for any errors thrown by the UI functions, thus users can catch</span>
+<span class="sd">    these errors with ``try: except UIError:`` to allow a program using this package</span>
+<span class="sd">    to exit gracefully or otherwise handle the error.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UITypeError"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UITypeError">[docs]</a><span class="k">class</span> <span class="nc">UITypeError</span><span class="p">(</span><span class="n">UIError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A subclass of UIError intended for errors about a variable being the wrong type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UIValueError"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIValueError">[docs]</a><span class="k">class</span> <span class="nc">UIValueError</span><span class="p">(</span><span class="n">UIError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A subclass of UIError intended for errors about a variable having the wrong value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UIOptNoneError"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UIOptNoneError">[docs]</a><span class="k">class</span> <span class="nc">UIOptNoneError</span><span class="p">(</span><span class="n">UIError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A subclass of UIError intended specifically for the ``opt_user_*`` functions in the</span>
+<span class="sd">    :mod:`pytui.uielements` module, to be raised when these functions receive a ``None``</span>
+<span class="sd">    type from their respective ``user_*`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UICallbackError"><a class="viewcode-back" href="../../uierrors_doc.html#pytui.uierrors.UICallbackError">[docs]</a><span class="k">class</span> <span class="nc">UICallbackError</span><span class="p">(</span><span class="n">UIError</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;A callback has not returned a new _CallBack instance.</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                  <span class="s2">&quot;See above the traceback for the menu hierarchy leading to the bad call&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UICallbackError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">callback</span><span class="o">.</span><span class="n">get_menu_hierarchy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hierarchy</span><span class="p">)):</span>
+            <span class="n">mstr</span> <span class="o">=</span> <span class="s2">&quot;  &quot;</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="s2">&quot;--&gt; &quot;</span> <span class="o">+</span> <span class="n">hierarchy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">mstr</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Josh Laughner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,775 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pytui.uielements &#8212; pytui 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pytui.uielements</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the low level text UI elements for the package pytui.</span>
+
+<span class="sd">This module contains the functions that actually handle user input. Each function is</span>
+<span class="sd">configured so that the user input occurs within a while True loop. Input checking is</span>
+<span class="sd">done on the user input and the loop will not exit if an invalid value was given.</span>
+
+<span class="sd">You are welcome to use these functions directly in your programs if you do not wish</span>
+<span class="sd">to use the menu construct classes also provided in the pytui package.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span>
+<span class="c1"># If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for</span>
+<span class="c1"># Python 2 (http://python-future.org/compatible_idioms.html)</span>
+<span class="c1"># from builtins import int</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">.uierrors</span> <span class="k">import</span> <span class="n">UIErrorWrapper</span><span class="p">,</span> <span class="n">UITypeError</span><span class="p">,</span> <span class="n">UIValueError</span><span class="p">,</span> <span class="n">UIOptNoneError</span>
+
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">major</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">text_input</span> <span class="o">=</span> <span class="n">raw_input</span>
+<span class="k">elif</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">major</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="n">text_input</span> <span class="o">=</span> <span class="nb">input</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;No text input function defined for Python version </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">major</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="user_input_list"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.user_input_list">[docs]</a><span class="k">def</span> <span class="nf">user_input_list</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">returntype</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">currentvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">emptycancel</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function provides the user a list of choices to choose from, the user selects one by its number</span>
+
+<span class="sd">    :param prompt: The text prompt to display for the user</span>
+<span class="sd">    :type prompt: str</span>
+<span class="sd">    :param options: The list of options to present</span>
+<span class="sd">    :type options: list or tuple</span>
+<span class="sd">    :param returntype: optional, can be &quot;value&quot; or &quot;index&quot;, &quot;value&quot; is default. If set to &quot;value&quot;, the return value</span>
+<span class="sd">        will be the value of the option chosen. If set to &quot;index&quot;, the return value will be the index of the list</span>
+<span class="sd">        chosen.</span>
+<span class="sd">    :type returntype: str</span>
+<span class="sd">    :param currentvalue: optional, defaults to None. Sets what the current value of this option is. If one is given, it</span>
+<span class="sd">        will be marked with a * in the list.</span>
+<span class="sd">    :param emptycancel: optional (type = bool), defaults to True. If true, then this function will return None if no</span>
+<span class="sd">        answer is chosen (but not if an invalid selection is chosen). A message indicating that an empty answer will</span>
+<span class="sd">        cancel is added to the prompt. If false, the list of options will be re-presented if no answer given.</span>
+<span class="sd">    :type emptycancel: bool</span>
+<span class="sd">    :return: either the value or index of the user choice (see returntype) or the type None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Input checking</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;prompt must be a string&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;options must be a list or tuple&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">returntype</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">returntype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">]:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;returntype must be one of the strings &#39;value&#39; or &#39;index&#39;&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">emptycancel</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;emptycancel must be a bool&quot;</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">emptycancel</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A empty answer will cancel.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">currentvalue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The current value is marked with a *&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">currentvalue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">options</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">currentvalue</span><span class="p">:</span>
+            <span class="n">currstr</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">currstr</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">{2}{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">currstr</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">userans</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Enter 1-</span><span class="si">{0}</span><span class="s2">: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">emptycancel</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">userans</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Input invalid&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">userans</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">userans</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+                <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">returntype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">options</span><span class="p">[</span><span class="n">userans</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">returntype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;index&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">userans</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="s2">&quot;Value &#39;</span><span class="si">{0}</span><span class="s2">&#39; for keyword &#39;returntype&#39; is not recognized&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">returntype</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="user_input_date"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.user_input_date">[docs]</a><span class="k">def</span> <span class="nf">user_input_date</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">currentvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">emptycancel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">req_time_part</span><span class="o">=</span><span class="s1">&#39;day&#39;</span><span class="p">,</span> <span class="n">smallest_allowed_time_part</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Request that the user input a date.</span>
+
+<span class="sd">    :param prompt: A string printed as the prompt; it should describe what date is</span>
+<span class="sd">        being requested.</span>
+<span class="sd">    :type prompt: str</span>
+<span class="sd">    :param currentvalue: optional, if given, will print out the current value given. Useful when setting an option so</span>
+<span class="sd">        that the user knows what the current value is.</span>
+<span class="sd">    :type currentvalue: datetime.date or datetime.datetime</span>
+<span class="sd">    :param emptycancel: optional, defaults to True. A boolean determining whether an</span>
+<span class="sd">        empty answer will cause this function to return None. If false, the user must enter</span>
+<span class="sd">        a valid date to exit (not recommended for most cases).</span>
+<span class="sd">    :type emptycancel: bool</span>
+<span class="sd">    :param req_time_part: optional, defaults to &#39;day&#39;. A string describing the largest</span>
+<span class="sd">        required time part, must be one of: &#39;year&#39;, &#39;month&#39;, &#39;day&#39;, &#39;hour&#39;, &#39;minute&#39;, &#39;second&#39;.</span>
+<span class="sd">        If this is set to &#39;minute&#39; for example, then the user must input at least year, month,</span>
+<span class="sd">        day, hour, and minute, or it will be rejected.</span>
+<span class="sd">    :type req_time_part: str</span>
+<span class="sd">    :param smallest_allowed_time_part: optional, defaults to None. A string describing</span>
+<span class="sd">        the smallest piece of time the user is allowed to specify. Must be one of the same strings</span>
+<span class="sd">        as allowed for req_time_part, and must be the same or smaller piece of time than req_time_part.</span>
+<span class="sd">        For example, if this is set to &#39;minute&#39;, then the user may not include seconds in their</span>
+<span class="sd">        answer. If left as None, then it will be automatically set to the same as req_time_part,</span>
+<span class="sd">        effectively giving the user only one choice for how specific to make their time.</span>
+<span class="sd">    :type smallest_allowed_time_part: str</span>
+<span class="sd">    :return: A datetime.datetime instance, or None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Prompts the user for a date in yyyy-mm-dd or yyyy-mm-dd HH:MM:SS format. Only input is a prompt describing</span>
+    <span class="c1"># what the date is. Returns a datetime object. The currentvalue keyword can be used to display the current</span>
+    <span class="c1"># setting, but it must be a datetime object as well. Returns none if user ever enters an empty string.</span>
+    <span class="k">if</span> <span class="n">currentvalue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">currentvalue</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">currentvalue</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;If given, currentvalue must be a datetime.date or datetime.datetime instance&quot;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">currentvalue</span><span class="p">)</span> <span class="ow">is</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">:</span>
+        <span class="n">currentvalue</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">currentvalue</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">currentvalue</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">currentvalue</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">emptycancel</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;If given, emptycancel must be a bool&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Must give the time formats as a list of tuples (instead of keyword-value pairs) to preserve order because</span>
+    <span class="c1"># at least in Python 2 **kwargs becomes a regular dict() and so loses order before OrderedDict even sees it.</span>
+    <span class="n">time_formats</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;hour&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;minute&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)])</span>
+    <span class="k">if</span> <span class="n">req_time_part</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">time_formats</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s1">&#39;req_time_part must be one of: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">time_formats</span><span class="o">.</span><span class="n">keys</span><span class="p">()))))</span>
+    <span class="k">elif</span> <span class="n">smallest_allowed_time_part</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">time_formats</span> <span class="ow">and</span> <span class="n">smallest_allowed_time_part</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s1">&#39;smallest_allowed_time_part must be one of: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">time_formats</span><span class="o">.</span><span class="n">keys</span><span class="p">()))))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">key_ind</span> <span class="o">=</span> <span class="n">time_formats</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">req_time_part</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">smallest_allowed_time_part</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">smallest_ind</span> <span class="o">=</span> <span class="n">key_ind</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">smallest_ind</span> <span class="o">=</span> <span class="n">time_formats</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">smallest_allowed_time_part</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">smallest_ind</span> <span class="o">&lt;=</span> <span class="n">key_ind</span><span class="p">:</span>
+            <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="s1">&#39;req_time_part must be a larger piece of time than smallest_allowed_time_part&#39;</span><span class="p">))</span>
+        <span class="n">allowed_time_fmts</span> <span class="o">=</span> <span class="n">time_formats</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="n">key_ind</span><span class="p">:</span><span class="n">smallest_ind</span><span class="p">]</span>
+        <span class="n">allowed_fmts_str</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">_human_readable_time_format</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span> <span class="k">for</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="n">allowed_time_fmts</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter in one of the formats: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">allowed_fmts_str</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">allowed_time_fmts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Any omitted parts will be set to 0 or 1, as appropriate&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">emptycancel</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Entering nothing will cancel&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">currentvalue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Current value is </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">currentvalue</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">userdate</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;--&gt; &quot;</span><span class="p">)</span>
+        <span class="n">userdate</span> <span class="o">=</span> <span class="n">userdate</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">userdate</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">emptycancel</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You must enter a value&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="n">matching_fmt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="n">allowed_time_fmts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">userdate</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">_human_readable_time_format</span><span class="p">(</span><span class="n">fmt</span><span class="p">)):</span>
+                <span class="n">matching_fmt</span> <span class="o">=</span> <span class="n">fmt</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">matching_fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Wrong number of characters. Allowed formats are: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">allowed_fmts_str</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dateout</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">userdate</span><span class="p">,</span> <span class="n">matching_fmt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cannot understand &quot;</span><span class="si">{}</span><span class="s1">&quot; as &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">userdate</span><span class="p">,</span> <span class="n">matching_fmt</span><span class="p">))</span>
+
+        <span class="c1"># If we get here, nothing went wrong</span>
+        <span class="k">return</span> <span class="n">dateout</span></div>
+
+
+<span class="k">def</span> <span class="nf">_human_readable_time_format</span><span class="p">(</span><span class="n">fmt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts strptime format string into something a little more human readable</span>
+
+<span class="sd">    :param fmt: the strptime format string</span>
+<span class="sd">    :type fmt: str</span>
+<span class="sd">    :return: the human-readable string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">translation_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;%Y&#39;</span><span class="p">:</span> <span class="s1">&#39;yyyy&#39;</span><span class="p">,</span> <span class="s1">&#39;%m&#39;</span><span class="p">:</span> <span class="s1">&#39;mm&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">:</span> <span class="s1">&#39;dd&#39;</span><span class="p">,</span> <span class="s1">&#39;%H&#39;</span><span class="p">:</span> <span class="s1">&#39;HH&#39;</span><span class="p">,</span> <span class="s1">&#39;%M&#39;</span><span class="p">:</span> <span class="s1">&#39;MM&#39;</span><span class="p">,</span> <span class="s1">&#39;%S&#39;</span><span class="p">:</span> <span class="s1">&#39;SS&#39;</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">translation_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fmt</span>
+
+
+<div class="viewcode-block" id="user_input_value"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.user_input_value">[docs]</a><span class="k">def</span> <span class="nf">user_input_value</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">testfxn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">testmsg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">currval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">returntype</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">emptycancel</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ask the user to input a value.</span>
+
+<span class="sd">    :param prompt: The prompt to give the user</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param testfxn: optional, if given, should be a function that returns a boolean value.</span>
+<span class="sd">        Used to test if the value the user gave is valid. This can be a pre-defined function</span>
+<span class="sd">        or one created using the lambda syntax. This will be called after the user input is</span>
+<span class="sd">        converted to the returntype given (see below)</span>
+<span class="sd">    :type testfxn: function</span>
+
+<span class="sd">    :param testmsg: optional, if given, should be a message that describes the conditions</span>
+<span class="sd">        required by testfxn. If testfxn is given, this really should be as well, or the user</span>
+<span class="sd">        will just see &quot;That is not an allowed value&quot;, which isn&#39;t very helpful.</span>
+<span class="sd">    :type testmsg: str</span>
+
+<span class="sd">    :param currval: optional, the current value of the option. If given, the value will</span>
+<span class="sd">        be printed after the prompt</span>
+
+<span class="sd">    :param returntype: optional, must be a type which can be used as a function to convert</span>
+<span class="sd">        a string to that type, e.g. int, bool, float, list. If the type is bool, this function</span>
+<span class="sd">        will require the user to enter T or F (or nothing if emptycancel is True). If not given,</span>
+<span class="sd">        the user input will be returned as a string.</span>
+<span class="sd">    :type returntype: str</span>
+
+<span class="sd">    :param emptycancel: optional, defaults to True. If True, then the user</span>
+<span class="sd">        can enter an empty string, which will make this function return None.</span>
+<span class="sd">    :type emptycancel: bool</span>
+
+<span class="sd">    :return: The user input value as the type specified by returntype, or None if emptycancel</span>
+<span class="sd">        is True and the user does not enter a value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;prompt must be a string&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">testfxn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">testfxn</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="c1"># There does not seem to be a &quot;function&quot; type like there is an int or float type</span>
+        <span class="c1"># so we&#39;ll just compare vs a simple lambda function. This should return true for</span>
+        <span class="c1"># a lambda function or a defined function.</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;testfxn must be a function&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">testmsg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">testmsg</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;testmsg must be a string&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">testmsg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">testfxn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;If you specify a testfxn but no testmsg it will not be clear to the user what is wrong&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">emptycancel</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;If given, emptycancel must be a bool&quot;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">testfxn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">testfxn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">testmsg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">testmsg</span> <span class="o">=</span> <span class="s1">&#39;That is not an allowed value&#39;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">currval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The current value is </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">currval</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">returntype</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="n">userans</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;T/F: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">userans</span> <span class="o">==</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">userans</span> <span class="o">==</span> <span class="s2">&quot;f&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Option is a boolean. Must enter T or F.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userans</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;--&gt; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">emptycancel</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">emptycancel</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cannot enter an empty value.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">userans</span> <span class="o">=</span> <span class="n">returntype</span><span class="p">(</span><span class="n">userans</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not convert your input to </span><span class="si">{0}</span><span class="s2">, try again&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">returntype</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">testfxn</span><span class="p">(</span><span class="n">userans</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">userans</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">testmsg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="user_input_yn"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.user_input_yn">[docs]</a><span class="k">def</span> <span class="nf">user_input_yn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prompts the user with a yes/no question, returns True if answer is yes, False if answer is no.</span>
+
+<span class="sd">    This is similar to user_input_value with a bool</span>
+<span class="sd">    return type, but handles it differently if the user does not enter a</span>
+<span class="sd">    value; this function will return the default value rather than a None type</span>
+<span class="sd">    or forcing the user to enter something</span>
+
+<span class="sd">    :param prompt: The prompt string that the user should be shown</span>
+<span class="sd">    :type prompt: str</span>
+<span class="sd">    :param default: optional, must be either the string &quot;y&quot; or &quot;n&quot;. Sets the</span>
+<span class="sd">        default answer.</span>
+<span class="sd">    :type default: bool</span>
+<span class="sd">    :return: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;prompt must be a string&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">default</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">default</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">&quot;YyNn&quot;</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;default must be the string &#39;y&#39; or &#39;n&#39;&quot;</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">default</span> <span class="ow">in</span> <span class="s2">&quot;Yy&quot;</span><span class="p">:</span>
+            <span class="n">defstr</span> <span class="o">=</span> <span class="s2">&quot; [y]/n&quot;</span>
+            <span class="n">defaultans</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">defstr</span> <span class="o">=</span> <span class="s2">&quot; y/[n]&quot;</span>
+            <span class="n">defaultans</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">userans</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="n">prompt</span> <span class="o">+</span> <span class="n">defstr</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">userans</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">defaultans</span>
+        <span class="k">elif</span> <span class="n">userans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">userans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;n&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter y or n only. &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="user_onoff_list"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.user_onoff_list">[docs]</a><span class="k">def</span> <span class="nf">user_onoff_list</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">currentstate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feedback_level</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">returntype</span><span class="o">=</span><span class="s2">&quot;opts&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides a list of toggleable options to the user</span>
+
+<span class="sd">    Will print the prompt followed by the list of options provided. The user</span>
+<span class="sd">    can interactively toggle each option on or off.</span>
+
+<span class="sd">    :param prompt: A string prompting the user what to do. Will be followed</span>
+<span class="sd">        by further instructions on what user inputs are valid.</span>
+<span class="sd">    :type prompt: str</span>
+<span class="sd">    :param options: A list or tuple of strings of the option names</span>
+<span class="sd">    :type options: list or tuple</span>
+<span class="sd">    :param currentstate: optional, describe the current state of the options (on or off).</span>
+<span class="sd">        If not given, all default to False. Must be the same length as options. Is shallow</span>
+<span class="sd">        copied internally so it will not change the values in the calling function.</span>
+<span class="sd">    :type currentstate: list of bools</span>
+<span class="sd">    :param feedback_level: optional, an integer describing how much feedback</span>
+<span class="sd">        to give the user. Defaults to 2, meaning that this function will print</span>
+<span class="sd">        out what user input it could not parse. Set to 0 to turn this off (1</span>
+<span class="sd">        reserved against future intermediate levels of feedback).</span>
+<span class="sd">    :type feedback_level: int</span>
+<span class="sd">    :param returntype: optional, a string determining what is returned. Default is &quot;opts&quot;,</span>
+<span class="sd">        which returns a list of the subset of options selected. May also be &quot;bools&quot;, meaning</span>
+<span class="sd">        that a list of booleans the same length as options is returned, True for what options</span>
+<span class="sd">        the user selected.</span>
+<span class="sd">    :type returntype: str</span>
+<span class="sd">    :return: a list of options selected (returntype == &quot;opts&quot;), or a list of bools with the new</span>
+<span class="sd">        states of the options (returntype == &quot;bools&quot;), or None if the user cancels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;prompt must be a string&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;options must be a list or tuple&quot;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">options</span><span class="p">]):</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;options must be a list or tuple of strings&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">currentstate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">currentstate</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">currentstate</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">currentstate</span><span class="p">]):</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITypeError</span><span class="p">(</span><span class="s2">&quot;currentstate must be a list of bools, if given&quot;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">currentstate</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="s2">&quot;currentstate must be the same length as options, if given&quot;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do not allow this function to modify the state in the calling workspace</span>
+        <span class="n">currentstate</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">currentstate</span><span class="p">)</span>
+
+    <span class="n">prompt</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Enter the number or multiple numbers separated by a space to toggle,</span><span class="se">\n</span><span class="s2">&quot;</span> \
+        <span class="s2">&quot;&#39;a&#39; or &#39;all&#39; to toggle all, &#39;on&#39; to set all on, &#39;off&#39; to set all off,</span><span class="se">\n</span><span class="s2">&quot;</span> \
+        <span class="s2">&quot;&#39;r&#39; to accept and return, or &#39;c&#39; to cancel and return.</span><span class="se">\n</span><span class="s2">&quot;</span> \
+        <span class="s2">&quot;Active options are marked with a *:&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">state_str</span> <span class="o">=</span> <span class="s2">&quot;[*]&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">state_str</span> <span class="o">=</span> <span class="s2">&quot;[ ]&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2"> </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">state_str</span><span class="p">))</span>
+
+        <span class="n">user_ans</span> <span class="o">=</span> <span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;(Type &#39;m&#39; to see initial message again) --&gt; &quot;</span><span class="p">)</span>
+        <span class="n">opt_inds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bad_opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;m&quot;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;r&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">returntype</span> <span class="o">==</span> <span class="s2">&quot;bools&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">currentstate</span>
+            <span class="k">elif</span> <span class="n">returntype</span> <span class="o">==</span> <span class="s2">&quot;opts&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">opt</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">opt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="k">if</span> <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;No return method implemented for returntype == &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">returntype</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span> <span class="ow">or</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+            <span class="c1"># Python3 range compatible</span>
+            <span class="n">opt_inds</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;on&quot;</span><span class="p">:</span>
+            <span class="n">opt_inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">))</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="n">user_ans</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;off&quot;</span><span class="p">:</span>
+            <span class="n">opt_inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">))</span> <span class="k">if</span> <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">user_ans</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">user_ans</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">user_ans</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">opt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="c1"># If the input cannot be parsed as an int, move on</span>
+                    <span class="n">bad_opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">opt</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">opt</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">):</span>
+                        <span class="n">opt_inds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">bad_opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">feedback_level</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_opts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not parse </span><span class="si">{0}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span>
+                  <span class="s2">&quot;out of range or not a number&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bad_opts</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">opt_inds</span><span class="p">:</span>
+            <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">currentstate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+
+<span class="k">def</span> <span class="nf">_optional_input</span><span class="p">(</span><span class="n">user_input_fxn</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_fxn</span><span class="p">,</span> <span class="n">input_valid_fxn</span><span class="p">,</span> <span class="n">input_invalid_msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Internal function that maintains the functionality common to all the opt_* functions.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">do_ask_fxn</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">user_input_fxn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">input_valid_fxn</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="n">input_invalid_msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">def</span> <span class="nf">_get_do_ask_fxn</span><span class="p">(</span><span class="n">ask_fxn</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_default_do_ask_fxn</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">ask_fxn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_default_do_ask_fxn</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ask_fxn</span>
+
+
+<div class="viewcode-block" id="opt_user_input_list"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.opt_user_input_list">[docs]</a><span class="k">def</span> <span class="nf">opt_user_input_list</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_on_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around user_input_list that calls it only if an interactive choice is necessary.</span>
+
+<span class="sd">    This function takes mostly the same arguments as user_input_list, but in addition takes an existing value and</span>
+<span class="sd">    tests if that value indicates that a choice needs to be made, or if not, that it is a valid option. Typically,</span>
+<span class="sd">    this would be used inside a function that has optional arguments that, if not given, should be asked interactively</span>
+<span class="sd">    of the user.</span>
+
+<span class="sd">    :param prompt: A string that is the prompt that will be given if the user needs to make an interactive choice</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param value: the current value that will be tested if it means the user should be asked to choose an option or</span>
+<span class="sd">        if it is valid</span>
+
+<span class="sd">    :param options: a list of allowed options, passed to user_input_list if needed.</span>
+<span class="sd">    :type options: list</span>
+
+<span class="sd">    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_list</span>
+<span class="sd">        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call</span>
+<span class="sd">        user_input_list if value is None).</span>
+<span class="sd">    :type do_ask_test: function</span>
+
+<span class="sd">    :param invalid_msg: optional, the message for the UIValueError raised if user_input_list is not called but value</span>
+<span class="sd">        is not in the options list. This can have two formatting markers, {value} and {opts}. {value} will be replaced</span>
+<span class="sd">        with the value given, {opts} will be replaced with a comma separated list of allowed options.</span>
+<span class="sd">    :type invalid_msg: str</span>
+
+<span class="sd">    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError</span>
+<span class="sd">        is raised.</span>
+<span class="sd">    :type error_on_none: bool</span>
+
+<span class="sd">    :param kwargs: additional keyword arguments recognized by user_input_list.</span>
+
+<span class="sd">    :return: the value selected, or the value given if user_input_list is not called. Raises a ValueError if value</span>
+<span class="sd">        is not in options and user_input_list is not called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">do_ask_test</span> <span class="o">=</span> <span class="n">_get_do_ask_fxn</span><span class="p">(</span><span class="n">do_ask_test</span><span class="p">)</span>
+
+    <span class="n">input_valid_fxn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">options</span>
+    <span class="k">if</span> <span class="n">invalid_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">invalid_msg</span> <span class="o">=</span> <span class="s1">&#39;The value {{value}} is invalid. It must be one of: </span><span class="si">{opts}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opts</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">options</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">invalid_msg</span> <span class="o">=</span> <span class="n">invalid_msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{value}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">options</span><span class="p">))</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_optional_input</span><span class="p">(</span><span class="n">user_input_list</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="p">,</span> <span class="n">input_valid_fxn</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">error_on_none</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIOptNoneError</span><span class="p">(</span><span class="s1">&#39;The user failed to provide a value&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="s1">&#39;returntype&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;returntype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;index&#39;</span> <span class="ow">and</span> <span class="n">response</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="opt_user_input_date"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.opt_user_input_date">[docs]</a><span class="k">def</span> <span class="nf">opt_user_input_date</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_valid_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_on_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around user_input_date that calls it only if an interactive input is necessary.</span>
+
+<span class="sd">    :param prompt: A string that is the prompt that will be given if the user needs enter a date</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param value: the current value of the date.</span>
+
+<span class="sd">    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_date</span>
+<span class="sd">        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call</span>
+<span class="sd">        user_input_date if value is None).</span>
+<span class="sd">    :type do_ask_test: function</span>
+
+<span class="sd">    :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean</span>
+<span class="sd">        indicating if value is valid. By default, this checks that value is an instance of datetime.date or datetime.datetime.</span>
+<span class="sd">    :type is_valid_test: function</span>
+
+<span class="sd">    :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.</span>
+<span class="sd">        If is_valid_test is given, this must also be given.</span>
+<span class="sd">    :type invalid_msg: str</span>
+
+<span class="sd">    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError</span>
+<span class="sd">        is raised.</span>
+<span class="sd">    :type error_on_none: bool</span>
+
+<span class="sd">    :param kwargs: additional keyword arguments to pass through to user_input_date.</span>
+
+<span class="sd">    :return: the date, either given as value or chosen by the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_ask_test</span> <span class="o">=</span> <span class="n">_get_do_ask_fxn</span><span class="p">(</span><span class="n">do_ask_test</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_valid_test</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_valid_test</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">is_valid_test</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">invalid_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="s1">&#39;If is_valid_test is given, invalid_msg should be to so that the error &#39;</span>
+                                                <span class="s1">&#39;message matches the test&#39;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">invalid_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">invalid_msg</span> <span class="o">=</span> <span class="s1">&#39;The given value must be an instance of datetime.date or datetime.datetime&#39;</span> <span class="k">if</span> <span class="n">invalid_msg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">invalid_msg</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_optional_input</span><span class="p">(</span><span class="n">user_input_date</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="p">,</span> <span class="n">is_valid_test</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">error_on_none</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIOptNoneError</span><span class="p">(</span><span class="s1">&#39;The user failed to provide a value&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="opt_user_input_value"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.opt_user_input_value">[docs]</a><span class="k">def</span> <span class="nf">opt_user_input_value</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_valid_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_on_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around user_input_value that calls it only if an interactive input is necessary</span>
+
+<span class="sd">    :param prompt: A string that is the prompt that will be given if the user needs enter a value</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param value: the current value</span>
+
+<span class="sd">    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_value</span>
+<span class="sd">        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call</span>
+<span class="sd">        user_input_value if value is None).</span>
+<span class="sd">    :type do_ask_test: function</span>
+
+<span class="sd">    :param is_valid_test: optional, if given, it must be a function that takes one input (value) and returns a boolean</span>
+<span class="sd">        indicating if value is valid. If not given, no check of the value will be done. This will also be passed through to</span>
+<span class="sd">        user_input_value as testfxn, ensuring that the criteria for the given value is the same in both.</span>
+<span class="sd">    :type is_valid_test: function</span>
+
+<span class="sd">    :param invalid_msg: optional, the error message that will be given in is_valid_test(value) returns False.</span>
+<span class="sd">        If is_valid_test is given, this must also be given. This will be passed through to user_input_valid as testmsg</span>
+<span class="sd">        so that the error message is consistent.</span>
+<span class="sd">    :type invalid_msg: str</span>
+
+<span class="sd">    :param kwargs: additional keyword arguments to pass through to user_input_value, except testfxn and testmsg,</span>
+<span class="sd">        which are already handled by is_valid_test and invalid_msg, respectively.</span>
+
+<span class="sd">    :param error_on_none: optional, default True, meaning that if the user fails to provide a value, a UIOptNoneError</span>
+<span class="sd">        is raised.</span>
+<span class="sd">    :type error_on_none: bool</span>
+
+<span class="sd">    :return: the value, either input as value or entered by the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_ask_test</span> <span class="o">=</span> <span class="n">_get_do_ask_fxn</span><span class="p">(</span><span class="n">do_ask_test</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_valid_test</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">invalid_msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIValueError</span><span class="p">(</span><span class="s1">&#39;If is_valid_test is given, invalid_msg must be as well&#39;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">is_valid_test</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_valid_test</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">:</span> <span class="kc">True</span>
+
+    <span class="c1"># Explicitly make testfxn and testmsg for user_input_value the same as the valid test and message used by this</span>
+    <span class="c1"># function</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_optional_input</span><span class="p">(</span><span class="n">user_input_value</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="p">,</span> <span class="n">is_valid_test</span><span class="p">,</span> <span class="n">invalid_msg</span><span class="p">,</span>
+                           <span class="n">testfxn</span><span class="o">=</span><span class="n">is_valid_test</span><span class="p">,</span> <span class="n">testmsg</span><span class="o">=</span><span class="n">invalid_msg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">error_on_none</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UIOptNoneError</span><span class="p">(</span><span class="s1">&#39;The user failed to provide a value&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="opt_user_input_yn"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.opt_user_input_yn">[docs]</a><span class="k">def</span> <span class="nf">opt_user_input_yn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around user_input_yn that calls it only if an interactive choice is required.</span>
+
+<span class="sd">    :param prompt: A string that is the prompt that will be given if the user needs to choose interactively</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param value: the current value. If it does not pass do_ask_test and is not a boolean, an error will be raised</span>
+
+<span class="sd">    :param do_ask_test: optional, a function that should take one input (value) and return True if user_input_yn</span>
+<span class="sd">        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call</span>
+<span class="sd">        user_input_yn if value is None).</span>
+<span class="sd">    :type do_ask_test: function</span>
+
+<span class="sd">    :param kwargs: additional keyword arguments to pass through to user_input_yn</span>
+
+<span class="sd">    :return: the value, either input as value or chosen by the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_ask_test</span> <span class="o">=</span> <span class="n">_get_do_ask_fxn</span><span class="p">(</span><span class="n">do_ask_test</span><span class="p">)</span>
+    <span class="n">invalid_msg</span> <span class="o">=</span> <span class="s1">&#39;The given value must be a boolean&#39;</span>
+    <span class="k">return</span> <span class="n">_optional_input</span><span class="p">(</span><span class="n">user_input_yn</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="n">invalid_msg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="opt_user_onoff_list"><a class="viewcode-back" href="../../uielements_doc.html#pytui.uielements.opt_user_onoff_list">[docs]</a><span class="k">def</span> <span class="nf">opt_user_onoff_list</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">returntype</span><span class="o">=</span><span class="s1">&#39;opts&#39;</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s1">&#39;The value&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around user_onoff_list that calls it only if an interactive choice is required.</span>
+
+<span class="sd">    :param prompt: A string that is the prompt that will be given if the user needs to choose interactively</span>
+<span class="sd">    :type prompt: str</span>
+
+<span class="sd">    :param value: the current value. If this does not pass do_ask_test, then it must be a list or tuple, of what depends</span>
+<span class="sd">        on returntype</span>
+
+<span class="sd">    :param options: the list of options to choose from.</span>
+<span class="sd">    :type options: list</span>
+
+<span class="sd">    :param do_ask_test: optional, a function that should take one input (value) and return True if user_onoff_list</span>
+<span class="sd">        should be called to ask the user what value to use. By default, tests if value is None (i.e. will call</span>
+<span class="sd">        user_onoff_list if value is None).</span>
+<span class="sd">    :type do_ask_test: function</span>
+
+<span class="sd">    :param returntype: optional, either the string &quot;opts&quot; or &quot;bools&quot;. The default is &quot;opts&quot;, which is the reverse of</span>
+<span class="sd">        user_onoff_list; it is assumed that this function is more likely to be used if a list of options is more likely to</span>
+<span class="sd">        be passed as an argument than a list of booleans.</span>
+<span class="sd">    :type returntype: str</span>
+
+<span class="sd">    :param value_name: optional, but recommended: this will be inserted into the error message raised if value does not</span>
+<span class="sd">        pass do_ask_test and is not the right format for the value of returntype as the name of the parameter that is wrong.</span>
+<span class="sd">        Otherwise, it just say &quot;The value&quot;, which isn&#39;t very informative for your user.</span>
+<span class="sd">    :type value_name: str</span>
+
+<span class="sd">    :param kwargs: additional keyword arguments to pass through to user_onoff_list, except returntype, which</span>
+<span class="sd">        is already passed automatically.</span>
+
+<span class="sd">    :return: either a list of booleans the same length as options or a list of the subset of options selected,</span>
+<span class="sd">        depending on the value of returntype. Will either be the input value, or the user&#39;s choice.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_ask_test</span> <span class="o">=</span> <span class="n">_get_do_ask_fxn</span><span class="p">(</span><span class="n">do_ask_test</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">opt_valid_test</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">([</span><span class="n">v</span> <span class="ow">in</span> <span class="n">options</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">bool_valid_test</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">])</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">returntype</span> <span class="o">==</span> <span class="s1">&#39;opts&#39;</span><span class="p">:</span>
+        <span class="n">is_valid_test</span> <span class="o">=</span> <span class="n">opt_valid_test</span>
+        <span class="n">invalid_message</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> must be a list or tuple containing a subset of the following: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">value_name</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">returntype</span> <span class="o">==</span> <span class="s1">&#39;bools&#39;</span><span class="p">:</span>
+        <span class="n">is_valid_test</span> <span class="o">=</span> <span class="n">bool_valid_test</span>
+        <span class="n">invalid_message</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> must be a list or tuple of booleans the same length as options (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value_name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;returntype == &quot;</span><span class="si">{}</span><span class="s1">&quot; is not permitted&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">returntype</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">_optional_input</span><span class="p">(</span><span class="n">user_onoff_list</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">do_ask_test</span><span class="p">,</span> <span class="n">is_valid_test</span><span class="p">,</span> <span class="n">invalid_message</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Josh Laughner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
