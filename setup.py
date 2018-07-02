@@ -1,22 +1,18 @@
-from distutils.core import setup
-import sys
+from setuptools import setup
 
-if sys.version_info.major == 2:
-    extra_dependencies = ['backports']
-else:
-    extra_dependencies = []
+# List of classifiers: https://pypi.org/pypi?%3Aaction=list_classifiers
 
-versionstr = '0.1'
+versionstr = '0.2'
 setup(
-    name='pytui',
-    packages=['pytui'], # this must be the same as the name above for PyPI
+    name='textui',
+    packages=['textui'], # this must be the same as the name above for PyPI
     version=versionstr,
     description='A text-based UI system',
-    author='Josh Laughner (firsttempora)',
+    author='firsttempora',
     author_email='first.tempora@gmail.com',
-    #url='https://github.com/firsttempora/JLLUtils', # use the URL to the github repo
+    url='https://github.com/firsttempora/pytui', # use the URL to the github repo
     #download_url='https://github.com/firsttempora/JLLUtils/tarball/{0}'.format(versionstr), # version must be a git tag
     keywords=['UI', 'user interface', 'text-based'],
-    classifiers=[],
-    install_requires=extra_dependencies,
+    classifiers=['License :: OSI Approved :: MIT License'],
+    install_requires=['backports.shutil_get_terminal_size'],
 )

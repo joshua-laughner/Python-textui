@@ -1,17 +1,12 @@
 from __future__ import print_function, absolute_import, division
 import math
-import sys
-
-import pdb
 
 from .uierrors import UIErrorWrapper, UITermError
 
-if sys.version_info.major == 2:
-    from backports.shutil_get_terminal_size import get_terminal_size
-elif sys.version_info.major == 3:
+try:
     from shutil import get_terminal_size
-else:
-    raise NotImplementedError('No text get_terminal_size function defined for Python version {}'.format(sys.version_info.major))
+except ImportError:
+    from backports.shutil_get_terminal_size import get_terminal_size
 
 _test_entries = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India',
                  'Juliet', 'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo',
@@ -93,7 +88,6 @@ def print_in_columns(entries, buffer_chars=4, fixed_width_columns=False, column_
             # If not using fixed width columns, then we'll try to find the optimal number of entries per
             # line by shrinking the columns, then adding one element to each row and seeing if that exceeds
             # the terminal width
-            pdb.set_trace()
             rows = shrink_cols(rows)
             longest_row_length = _max_len(join_rows(rows))
             if longest_row_length > n_term_col:
