@@ -15,7 +15,7 @@ setup(
     author='Josh Laughner (firsttempora)',
     author_email='first.tempora@gmail.com',
     url='https://github.com/firsttempora/Python-textui', # use the URL to the github repo
-    download_url='https://github.com/firsttempora/Python-textui/tarball/{0}'.format(versionstr), # version must be a git tag
+    download_url='https://github.com/firsttempora/Python-textui/tarball/v{0}'.format(versionstr), # version must be a git tag
     keywords=['UI', 'user interface', 'text-based'],
     classifiers=['License :: OSI Approved :: MIT License'],
     install_requires=['backports.shutil_get_terminal_size'],
