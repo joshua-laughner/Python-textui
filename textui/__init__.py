@@ -1,5 +1,5 @@
 """
-pytui: Python text UI, a text based user interface package
+textui: Python text UI, a text based user interface package
 
 A note on error handling: many of the functions in this packages throw exceptions if
 your input (not the user input) is of the wrong type. You may not wish such errors to
@@ -10,11 +10,11 @@ occur when the program is in use by the end user. There are several ways to hand
     raised, meaning that it will print a simple "internal error" message and exit. To
     enable this behavior, one would do this:
 
-        from pytui.uierrors import UIErrorWrapper
+        from textui.uierrors import UIErrorWrapper
         UIErrorWrapper.do_soft_exit = True
 
     2) Any error deliberately thrown by one of these functions is a subclass of UIError
-    contained in the uierrors submodule of pytui. You could wrap any calls to this
+    contained in the uierrors submodule of textui. You could wrap any calls to this
     package in a try, except block checking for exceptions of the UIError type and
     use that to exit gracefully. This will not catch other, deeper Python exceptions.
     UIErrors itself derives from Exception, so you could also catch any exception and

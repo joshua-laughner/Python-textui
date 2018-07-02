@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
 
 # -- Project information -----------------------------------------------------
 
-project = 'pytui'
+project = 'textui'
 copyright = '2018, Josh Laughner'
 author = 'Josh Laughner'
 
@@ -105,7 +105,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pytuidoc'
+htmlhelp_basename = 'textuidoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -132,7 +132,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pytui.tex', 'pytui Documentation',
+    (master_doc, 'textui.tex', 'pytui Documentation',
      'Josh Laughner', 'manual'),
 ]
 
@@ -142,7 +142,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pytui', 'pytui Documentation',
+    (master_doc, 'textui', 'pytui Documentation',
      [author], 1)
 ]
 
@@ -153,8 +153,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pytui', 'pytui Documentation',
-     author, 'pytui', 'One line description of project.',
+    (master_doc, 'textui', 'pytui Documentation',
+     author, 'textui', 'One line description of project.',
      'Miscellaneous'),
 ]
 

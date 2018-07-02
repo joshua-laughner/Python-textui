@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
-set SPHINXPROJ=pytui
+set SPHINXPROJ=textui
 
 if "%1" == "" goto help
 

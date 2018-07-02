@@ -1,9 +1,9 @@
-Introduction to pytui
-=====================
+Introduction to textui
+======================
 
 .. include:: includes/std_includes.rst
 
-``pytui`` is a package intended to provide a simple to use but flexible
+``textui`` is a package intended to provide a simple to use but flexible
 text-based menu system that is widely compatible with many different system.
 A large part of my motivation for creating this package is that, as a scientist,
 I'm often working via SSH or other terminal-based remote access to a computing
@@ -19,5 +19,5 @@ user input.
 :ref:`uibuilder-ref-label`: a collection of classes that can be used to build
 a multi-level interlinked menu system.
 
-All elements of ``pytui`` work by printing directly to the terminal, so programs
+All elements of ``textui`` work by printing directly to the terminal, so programs
 using it do not require any kind of X11 forwarding to work across an SSH connection.

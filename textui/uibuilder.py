@@ -83,7 +83,7 @@ class Menu(object):
         if type(name) is not str:
             UIErrorWrapper.raise_error(UITypeError("name must be a string"))
         if not callable(callback) and not isinstance(callback, _CallBack):
-            UIErrorWrapper.raise_error(UITypeError("callback must be a function or an instance of pytui.uibuilder.Callback"))
+            UIErrorWrapper.raise_error(UITypeError("callback must be a function or an instance of textui.uibuilder.Callback"))
 
         if isinstance(callback, _CallBack):
             callback_inst = callback
@@ -123,7 +123,7 @@ class Menu(object):
         :return: none
         """
         if not isinstance(submenu, Menu):
-            UIErrorWrapper.raise_error(TypeError('submenu must be an instance of pytui.uibuilder.Menu'))
+            UIErrorWrapper.raise_error(TypeError('submenu must be an instance of textui.uibuilder.Menu'))
         if menu_item_name is None:
             menu_item_name = submenu.name
         elif not isinstance(menu_item_name, str):

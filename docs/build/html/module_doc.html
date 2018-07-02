@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pytui module documentation &#8212; pytui 0.1.0 documentation</title>
+    <title>textui module documentation &#8212; textui 0.1.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="_static/documentation_options.js"></script>
@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="uibuilder" href="uibuilder_doc.html" />
-    <link rel="prev" title="Introduction to pytui" href="intro.html" />
+    <link rel="prev" title="Introduction to textui" href="intro.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,10 +31,10 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="pytui-module-documentation">
-<h1>pytui module documentation<a class="headerlink" href="#pytui-module-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="textui-module-documentation">
+<h1>textui module documentation<a class="headerlink" href="#textui-module-documentation" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="index.html">Back to the docs main page</a></p>
-<span class="target" id="module-pytui"></span><p>pytui: Python text UI, a text based user interface package</p>
+<span class="target" id="module-textui"></span><p>textui: Python text UI, a text based user interface package</p>
 <p>A note on error handling: many of the functions in this packages throw exceptions if
 your input (not the user input) is of the wrong type. You may not wish such errors to
 occur when the program is in use by the end user. There are several ways to handle this.</p>
@@ -44,10 +44,10 @@ submodule uierrors. This class can be set to do a “soft exit” when exception
 raised, meaning that it will print a simple “internal error” message and exit. To
 enable this behavior, one would do this:</p>
 <blockquote>
-<div>from pytui.uierrors import UIErrorWrapper
+<div>from textui.uierrors import UIErrorWrapper
 UIErrorWrapper.do_soft_exit = True</div></blockquote>
 <p>2) Any error deliberately thrown by one of these functions is a subclass of UIError
-contained in the uierrors submodule of pytui. You could wrap any calls to this
+contained in the uierrors submodule of textui. You could wrap any calls to this
 package in a try, except block checking for exceptions of the UIError type and
 use that to exit gracefully. This will not catch other, deeper Python exceptions.
 UIErrors itself derives from Exception, so you could also catch any exception and
@@ -67,7 +67,7 @@ exit gracefully.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="intro.html" title="previous chapter">Introduction to pytui</a></li>
+      <li>Previous: <a href="intro.html" title="previous chapter">Introduction to textui</a></li>
       <li>Next: <a href="uibuilder_doc.html" title="next chapter">uibuilder</a></li>
   </ul></li>
 </ul>

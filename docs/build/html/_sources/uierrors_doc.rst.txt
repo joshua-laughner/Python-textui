@@ -3,5 +3,5 @@ uierrors
 
 .. include:: includes/std_includes.rst
 
-.. automodule:: pytui.uierrors
+.. automodule:: textui.uierrors
    :members:

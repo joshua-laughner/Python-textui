@@ -1,12 +1,12 @@
 """
-This module contains the low level text UI elements for the package pytui.
+This module contains the low level text UI elements for the package textui.
 
 This module contains the functions that actually handle user input. Each function is
 configured so that the user input occurs within a while True loop. Input checking is
 done on the user input and the loop will not exit if an invalid value was given.
 
 You are welcome to use these functions directly in your programs if you do not wish
-to use the menu construct classes also provided in the pytui package.
+to use the menu construct classes also provided in the textui package.
 """
 from __future__ import print_function, division, absolute_import
 # If comparing to the int type becomes a compatibility issue, try this. Requires installing the builtins package for
@@ -59,7 +59,7 @@ def user_input_list(prompt, options, returntype="value", currentvalue=None, empt
         columns (``True``) or all printed in one column (``False``).
     :type printcols: bool
 
-    :param printcolargs: keyword arguments to be passed through to :func:`pytui.uiutils.print_in_columns`. Only has
+    :param printcolargs: keyword arguments to be passed through to :func:`textui.uiutils.print_in_columns`. Only has
         an effect if ``printcols`` is ``True``.
 
     :return: either the value or index of the user choice (see returntype) or the type None.
@@ -391,7 +391,7 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
         across the terminal in columns (``True``) or all printed in one column (``False``).
     :type printcols: bool
 
-    :param printcolargs: keyword arguments to be passed through to :func:`pytui.uiutils.print_in_columns`. Only has
+    :param printcolargs: keyword arguments to be passed through to :py:func:`textui.uiutils.print_in_columns`. Only has
         an effect if ``printcols`` is ``True``.
 
     :return: a list of options selected (returntype == "opts"), or a list of bools with the new

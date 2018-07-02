@@ -7,4 +7,4 @@ uibuilder
 
 **Work in progress!!!**
 
-.. automodule:: pytui.uibuilder
+.. automodule:: textui.uibuilder

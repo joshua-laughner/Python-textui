@@ -19,9 +19,9 @@ class UIErrorWrapper:
     Wrapper class used to control exception raising in UI functions.
 
     This class is used to wrap UI error calls so that they can be deactivated
-    when a UI driven program is released to users. Developers using the pytui
+    when a UI driven program is released to users. Developers using the textui
     package can thus control how exceptions and warnings deliberately issued
-    by pytui are handled using the following class propeties:
+    by textui are handled using the following class propeties:
 
         do_throw_both: default ``True``, if set to ``False`` suppresses both exceptions
         and warnings issued by the UI functions.
@@ -43,7 +43,7 @@ class UIErrorWrapper:
     variable or command line switch so that users could turn on error messages for
     debugging reports, as::
 
-        from pytui.uierrors import UIErrorWrapper
+        from textui.uierrors import UIErrorWrapper
         mydebug_flag = os.getenv('MY_DEBUG') > 0
         if mydebug_flag:
             UIErrorWrapper.do_soft_exit = False
@@ -59,7 +59,7 @@ class UIErrorWrapper:
     deeper in the code.
 
 
-    For those working on pytui itself, any exceptions or warnings should be issued
+    For those working on textui itself, any exceptions or warnings should be issued
     though this class using the class methods ``raise_error`` and ``warn``.
     """
     do_throw_both = True
@@ -147,7 +147,7 @@ class UIValueError(UIError):
 class UIOptNoneError(UIError):
     """
     A subclass of UIError intended specifically for the ``opt_user_*`` functions in the
-    :mod:`pytui.uielements` module, to be raised when these functions receive a ``None``
+    :mod:`textui.uielements` module, to be raised when these functions receive a ``None``
     type from their respective ``user_*`` function.
     """
     pass

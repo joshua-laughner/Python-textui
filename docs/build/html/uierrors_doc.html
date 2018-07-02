@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>uierrors &#8212; pytui 0.1.0 documentation</title>
+    <title>uierrors &#8212; textui 0.1.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="_static/documentation_options.js"></script>
@@ -33,27 +33,27 @@
   <div class="section" id="uierrors">
 <h1>uierrors<a class="headerlink" href="#uierrors" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="index.html">Back to the docs main page</a></p>
-<span class="target" id="module-pytui.uierrors"></span><dl class="exception">
-<dt id="pytui.uierrors.UICallbackError">
-<em class="property">exception </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UICallbackError</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uierrors.html#UICallbackError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UICallbackError" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="module-textui.uierrors"></span><dl class="exception">
+<dt id="textui.uierrors.UICallbackError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UICallbackError</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uierrors.html#UICallbackError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UICallbackError" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="exception">
-<dt id="pytui.uierrors.UIError">
-<em class="property">exception </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UIError</code><a class="reference internal" href="_modules/pytui/uierrors.html#UIError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIError" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UIError</code><a class="reference internal" href="_modules/textui/uierrors.html#UIError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parent class for any errors thrown by the UI functions, thus users can catch
 these errors with <code class="docutils literal notranslate"><span class="pre">try:</span> <span class="pre">except</span> <span class="pre">UIError:</span></code> to allow a program using this package
 to exit gracefully or otherwise handle the error.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pytui.uierrors.UIErrorWrapper">
-<em class="property">class </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UIErrorWrapper</code><span class="sig-paren">(</span><em>err</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uierrors.html#UIErrorWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIErrorWrapper" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIErrorWrapper">
+<em class="property">class </em><code class="descclassname">textui.uierrors.</code><code class="descname">UIErrorWrapper</code><span class="sig-paren">(</span><em>err</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uierrors.html#UIErrorWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIErrorWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper class used to control exception raising in UI functions.</p>
 <p>This class is used to wrap UI error calls so that they can be deactivated
-when a UI driven program is released to users. Developers using the pytui
+when a UI driven program is released to users. Developers using the textui
 package can thus control how exceptions and warnings deliberately issued
-by pytui are handled using the following class propeties:</p>
+by textui are handled using the following class propeties:</p>
 <blockquote>
 <div><p>do_throw_both: default <code class="docutils literal notranslate"><span class="pre">True</span></code>, if set to <code class="docutils literal notranslate"><span class="pre">False</span></code> suppresses both exceptions
 and warnings issued by the UI functions.</p>
@@ -71,7 +71,7 @@ any import statements (this prevents your settings from being overwritten by
 imported modules). Ideally, you could control this using some environmental
 variable or command line switch so that users could turn on error messages for
 debugging reports, as:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pytui.uierrors</span> <span class="k">import</span> <span class="n">UIErrorWrapper</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textui.uierrors</span> <span class="k">import</span> <span class="n">UIErrorWrapper</span>
 <span class="n">mydebug_flag</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;MY_DEBUG&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 <span class="k">if</span> <span class="n">mydebug_flag</span><span class="p">:</span>
     <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">do_soft_exit</span> <span class="o">=</span> <span class="kc">False</span>
@@ -86,11 +86,11 @@ debugging reports, as:</p>
 as this will turn off error checking in direct input to the UI functions (that
 is, input in your code, not the user input) which may simply lead to weirder errors
 deeper in the code.</p>
-<p>For those working on pytui itself, any exceptions or warnings should be issued
+<p>For those working on textui itself, any exceptions or warnings should be issued
 though this class using the class methods <code class="docutils literal notranslate"><span class="pre">raise_error</span></code> and <code class="docutils literal notranslate"><span class="pre">warn</span></code>.</p>
 <dl class="classmethod">
-<dt id="pytui.uierrors.UIErrorWrapper.raise_error">
-<em class="property">classmethod </em><code class="descname">raise_error</code><span class="sig-paren">(</span><em>err</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uierrors.html#UIErrorWrapper.raise_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIErrorWrapper.raise_error" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIErrorWrapper.raise_error">
+<em class="property">classmethod </em><code class="descname">raise_error</code><span class="sig-paren">(</span><em>err</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uierrors.html#UIErrorWrapper.raise_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIErrorWrapper.raise_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>(classmethod) Wrapper method to raise exceptions only if the wrapper class is set to do so</p>
 <p>Call this method with the instance of the exception to raise, as in
 <code class="docutils literal notranslate"><span class="pre">UIErrorWrapper.raise_error(UITypeError(&quot;message</span> <span class="pre">to</span> <span class="pre">issue</span> <span class="pre">with</span> <span class="pre">error&quot;))</span></code>
@@ -109,8 +109,8 @@ Its behavior is modified by the class properties <code class="docutils literal n
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pytui.uierrors.UIErrorWrapper.warn">
-<em class="property">classmethod </em><code class="descname">warn</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uierrors.html#UIErrorWrapper.warn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIErrorWrapper.warn" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIErrorWrapper.warn">
+<em class="property">classmethod </em><code class="descname">warn</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uierrors.html#UIErrorWrapper.warn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIErrorWrapper.warn" title="Permalink to this definition">¶</a></dt>
 <dd><p>(classmethod) Wrapper method to issue warnings only if the wrapper class is set to do so</p>
 <p>Call this method with the message of the warning to issue, as
 in <code class="docutils literal notranslate"><span class="pre">UIErrorWrapper.warn(&quot;warning</span> <span class="pre">message</span> <span class="pre">to</span> <span class="pre">issue&quot;)</span></code>
@@ -131,22 +131,27 @@ and <code class="docutils literal notranslate"><span class="pre">do_throw_warnin
 </dd></dl>
 
 <dl class="exception">
-<dt id="pytui.uierrors.UIOptNoneError">
-<em class="property">exception </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UIOptNoneError</code><a class="reference internal" href="_modules/pytui/uierrors.html#UIOptNoneError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIOptNoneError" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIOptNoneError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UIOptNoneError</code><a class="reference internal" href="_modules/textui/uierrors.html#UIOptNoneError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIOptNoneError" title="Permalink to this definition">¶</a></dt>
 <dd><p>A subclass of UIError intended specifically for the <code class="docutils literal notranslate"><span class="pre">opt_user_*</span></code> functions in the
-<a class="reference internal" href="uielements_doc.html#module-pytui.uielements" title="pytui.uielements"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pytui.uielements</span></code></a> module, to be raised when these functions receive a <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<a class="reference internal" href="uielements_doc.html#module-textui.uielements" title="textui.uielements"><code class="xref py py-mod docutils literal notranslate"><span class="pre">textui.uielements</span></code></a> module, to be raised when these functions receive a <code class="docutils literal notranslate"><span class="pre">None</span></code>
 type from their respective <code class="docutils literal notranslate"><span class="pre">user_*</span></code> function.</p>
 </dd></dl>
 
 <dl class="exception">
-<dt id="pytui.uierrors.UITypeError">
-<em class="property">exception </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UITypeError</code><a class="reference internal" href="_modules/pytui/uierrors.html#UITypeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UITypeError" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UITermError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UITermError</code><a class="reference internal" href="_modules/textui/uierrors.html#UITermError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UITermError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="textui.uierrors.UITypeError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UITypeError</code><a class="reference internal" href="_modules/textui/uierrors.html#UITypeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UITypeError" title="Permalink to this definition">¶</a></dt>
 <dd><p>A subclass of UIError intended for errors about a variable being the wrong type</p>
 </dd></dl>
 
 <dl class="exception">
-<dt id="pytui.uierrors.UIValueError">
-<em class="property">exception </em><code class="descclassname">pytui.uierrors.</code><code class="descname">UIValueError</code><a class="reference internal" href="_modules/pytui/uierrors.html#UIValueError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uierrors.UIValueError" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uierrors.UIValueError">
+<em class="property">exception </em><code class="descclassname">textui.uierrors.</code><code class="descname">UIValueError</code><a class="reference internal" href="_modules/textui/uierrors.html#UIValueError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uierrors.UIValueError" title="Permalink to this definition">¶</a></dt>
 <dd><p>A subclass of UIError intended for errors about a variable having the wrong value.</p>
 </dd></dl>
 
