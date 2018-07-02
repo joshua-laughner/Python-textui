@@ -1,7 +1,7 @@
-uierrors
-========
+uiutils
+=======
 
 .. include:: includes/std_includes.rst
 
-.. automodule:: textui.uierrors
+.. automodule:: textui.uiutils
    :members:

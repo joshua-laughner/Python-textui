@@ -1,0 +1,121 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>uiutils &#8212; textui 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="uierrors" href="uierrors_doc.html" />
+    <link rel="prev" title="uielements" href="uielements_doc.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="uiutils">
+<h1>uiutils<a class="headerlink" href="#uiutils" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="index.html">Back to the docs main page</a></p>
+<span class="target" id="module-textui.uiutils"></span><dl class="function">
+<dt id="textui.uiutils.print_in_columns">
+<code class="descclassname">textui.uiutils.</code><code class="descname">print_in_columns</code><span class="sig-paren">(</span><em>entries</em>, <em>buffer_chars=4</em>, <em>fixed_width_columns=False</em>, <em>column_major=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uiutils.html#print_in_columns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uiutils.print_in_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of entries, print them in columns across the terminal</p>
+<p>This function will try to evenly divide the given list of entries into columns across the current terminal.
+By default, it will left-align each column and put at least 4 spaces between each column. Successive entries
+will be printed in columns by default.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>entries</strong> (<em>list of str</em>) – the list of entries to print, as strings</li>
+<li><strong>buffer_chars</strong> – optional, the minimum number of spaces required between columns, i.e. the number of spaces
+that will follow the longest entry in that column. Default is 4.</li>
+<li><strong>fixed_width_columns</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional, controls whether all columns have the same width (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or different
+widths as long as the number of <code class="docutils literal notranslate"><span class="pre">buffer_chars</span></code> is maintained (<code class="docutils literal notranslate"><span class="pre">False</span></code>). Default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>column_major</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional, controls whether successive elements are printed along columns (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or rows
+(<code class="docutils literal notranslate"><span class="pre">False</span></code>). Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="uielements_doc.html" title="previous chapter">uielements</a></li>
+      <li>Next: <a href="uierrors_doc.html" title="next chapter">uierrors</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/uiutils_doc.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Josh Laughner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/uiutils_doc.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

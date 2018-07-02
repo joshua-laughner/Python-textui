@@ -1,0 +1,221 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>textui.uiutils &#8212; textui 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for textui.uiutils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">.uierrors</span> <span class="k">import</span> <span class="n">UIErrorWrapper</span><span class="p">,</span> <span class="n">UITermError</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">shutil</span> <span class="k">import</span> <span class="n">get_terminal_size</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">backports.shutil_get_terminal_size</span> <span class="k">import</span> <span class="n">get_terminal_size</span>
+
+<span class="n">_test_entries</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;Bravo&#39;</span><span class="p">,</span> <span class="s1">&#39;Charlie&#39;</span><span class="p">,</span> <span class="s1">&#39;Delta&#39;</span><span class="p">,</span> <span class="s1">&#39;Echo&#39;</span><span class="p">,</span> <span class="s1">&#39;Foxtrot&#39;</span><span class="p">,</span> <span class="s1">&#39;Golf&#39;</span><span class="p">,</span> <span class="s1">&#39;Hotel&#39;</span><span class="p">,</span> <span class="s1">&#39;India&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;Juliet&#39;</span><span class="p">,</span> <span class="s1">&#39;Kilo&#39;</span><span class="p">,</span> <span class="s1">&#39;Lima&#39;</span><span class="p">,</span> <span class="s1">&#39;Mike&#39;</span><span class="p">,</span> <span class="s1">&#39;November&#39;</span><span class="p">,</span> <span class="s1">&#39;Oscar&#39;</span><span class="p">,</span> <span class="s1">&#39;Papa&#39;</span><span class="p">,</span> <span class="s1">&#39;Quebec&#39;</span><span class="p">,</span> <span class="s1">&#39;Romeo&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;Sierra&#39;</span><span class="p">,</span> <span class="s1">&#39;Tango&#39;</span><span class="p">,</span> <span class="s1">&#39;Unicorn&#39;</span><span class="p">,</span> <span class="s1">&#39;Victor&#39;</span><span class="p">,</span> <span class="s1">&#39;Whiskey&#39;</span><span class="p">,</span> <span class="s1">&#39;X-ray&#39;</span><span class="p">,</span> <span class="s1">&#39;Yankee&#39;</span><span class="p">,</span> <span class="s1">&#39;Zulu&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="print_in_columns"><a class="viewcode-back" href="../../uiutils_doc.html#textui.uiutils.print_in_columns">[docs]</a><span class="k">def</span> <span class="nf">print_in_columns</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">buffer_chars</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">fixed_width_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">column_major</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of entries, print them in columns across the terminal</span>
+
+<span class="sd">    This function will try to evenly divide the given list of entries into columns across the current terminal.</span>
+<span class="sd">    By default, it will left-align each column and put at least 4 spaces between each column. Successive entries</span>
+<span class="sd">    will be printed in columns by default.</span>
+
+<span class="sd">    :param entries: the list of entries to print, as strings</span>
+<span class="sd">    :type entries: list of str</span>
+
+<span class="sd">    :param buffer_chars: optional, the minimum number of spaces required between columns, i.e. the number of spaces</span>
+<span class="sd">        that will follow the longest entry in that column. Default is 4.</span>
+<span class="sd">    :type buffer: int</span>
+
+<span class="sd">    :param fixed_width_columns:  optional, controls whether all columns have the same width (``True``) or different</span>
+<span class="sd">        widths as long as the number of ``buffer_chars`` is maintained (``False``). Default is ``False``.</span>
+<span class="sd">    :type fixed_width_columns: bool</span>
+
+<span class="sd">    :param column_major: optional, controls whether successive elements are printed along columns (``True``) or rows</span>
+<span class="sd">        (``False``). Default is ``True``.</span>
+<span class="sd">    :type column_major: bool</span>
+
+<span class="sd">    :return: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_term_col</span> <span class="o">=</span> <span class="n">get_terminal_size</span><span class="p">()</span><span class="o">.</span><span class="n">columns</span>
+    <span class="n">max_entry_length</span> <span class="o">=</span> <span class="n">_max_len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">+</span> <span class="n">buffer_chars</span>
+    <span class="n">n_entry_col</span> <span class="o">=</span> <span class="n">n_term_col</span> <span class="o">//</span> <span class="n">max_entry_length</span>
+
+    <span class="k">def</span> <span class="nf">make_rows</span><span class="p">(</span><span class="n">n_columns</span><span class="p">,</span> <span class="n">col_width</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Place the individual entries into rows</span>
+<span class="sd">        :param n_columns: the starting number of columns to divide them into, this should be a small enough</span>
+<span class="sd">            number that each row is guaranteed to be smaller than the terminal width</span>
+<span class="sd">        :param col_width: how wide, in characters, the columns should be. This should be the maximum number</span>
+<span class="sd">            of characters required for the widest column.</span>
+<span class="sd">        :return: a list of lists, representing the rows.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># this will be set the first time through the loop so that once we create a row that is too long</span>
+        <span class="c1"># we fall back to the last short enough set of rows</span>
+        <span class="n">last_rows</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Calculating the necessary number of rows first, then the number of elements per row second will</span>
+        <span class="c1"># put as close to equal numbers of entries in each row to start as possible.</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_columns</span><span class="p">))</span>
+        <span class="n">n_per_row</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_rows</span><span class="p">))</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">column_major</span><span class="p">:</span>
+                <span class="c1"># If we want successive entries to go across the screen, then down, each row can just be the</span>
+                <span class="c1"># next n_per_row block of entries</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">),</span> <span class="n">n_per_row</span><span class="p">):</span>
+                    <span class="n">j</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">n_per_row</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">))</span>
+                    <span class="n">sub_list</span> <span class="o">=</span> <span class="n">entries</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">this_row</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sub_list</span><span class="p">):</span>
+                        <span class="n">this_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_pad_string</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">col_width</span><span class="p">))</span>
+                    <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_row</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If we want successive entries to go down the screen first, then across, we need to construct</span>
+                <span class="c1"># the row by taking every n_per_row&#39;th entry</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_rows</span><span class="p">):</span>
+                    <span class="n">sub_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">entries</span><span class="p">[</span><span class="n">i_r</span><span class="p">]</span> <span class="k">for</span> <span class="n">i_r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">),</span> <span class="n">n_rows</span><span class="p">)]</span>
+                    <span class="n">this_row</span> <span class="o">=</span> <span class="p">[</span><span class="n">_pad_string</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">col_width</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sub_list</span><span class="p">)]</span>
+                    <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_row</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">fixed_width_columns</span><span class="p">:</span>
+                <span class="c1"># fixed_width_columns means that every column must be kept to the same width, which will be the</span>
+                <span class="c1"># maximum required width. In that case, we&#39;ve already found the optimal distribution of elements</span>
+                <span class="c1"># on the screen.</span>
+                <span class="k">return</span> <span class="n">rows</span>
+
+            <span class="c1"># If not using fixed width columns, then we&#39;ll try to find the optimal number of entries per</span>
+            <span class="c1"># line by shrinking the columns, then adding one element to each row and seeing if that exceeds</span>
+            <span class="c1"># the terminal width</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">shrink_cols</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+            <span class="n">longest_row_length</span> <span class="o">=</span> <span class="n">_max_len</span><span class="p">(</span><span class="n">join_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">longest_row_length</span> <span class="o">&gt;</span> <span class="n">n_term_col</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">last_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">UIErrorWrapper</span><span class="o">.</span><span class="n">raise_error</span><span class="p">(</span><span class="n">UITermError</span><span class="p">(</span><span class="s1">&#39;The initial column spacing resulted in a row wider than the terminal&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">last_rows</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">last_rows</span> <span class="o">=</span> <span class="n">rows</span>
+                <span class="k">if</span> <span class="n">column_major</span><span class="p">:</span>
+                    <span class="n">n_rows</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">n_rows</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">rows</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">n_per_row</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">rows_to_columns</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">max_n_per_row</span> <span class="o">=</span> <span class="n">_max_len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_n_per_row</span><span class="p">):</span>
+            <span class="n">this_col</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_col</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cols</span>
+
+    <span class="k">def</span> <span class="nf">columns_to_rows</span><span class="p">(</span><span class="n">columns</span><span class="p">):</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="n">_max_len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rows</span><span class="p">):</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">col</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">r</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rows</span>
+
+    <span class="k">def</span> <span class="nf">shrink_cols</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">rows_to_columns</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">_max_len</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">prefxn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span> <span class="o">+</span> <span class="n">buffer_chars</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+                <span class="n">col</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pad_string</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(),</span> <span class="n">width</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">columns_to_rows</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">join_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+
+    <span class="n">all_rows</span> <span class="o">=</span> <span class="n">make_rows</span><span class="p">(</span><span class="n">n_entry_col</span><span class="p">,</span> <span class="n">max_entry_length</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">join_rows</span><span class="p">(</span><span class="n">all_rows</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_max_len</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">prefxn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">prefxn</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_pad_string</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">*</span><span class="p">(</span><span class="n">length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Josh Laughner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

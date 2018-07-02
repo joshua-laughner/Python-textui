@@ -1,12 +1,12 @@
-.. pytui documentation master file, created by
+.. textui documentation master file, created by
    sphinx-quickstart on Sat Jun 30 22:30:40 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Documentation for *pytui*
-=========================
+Documentation for **textui**
+============================
 
-Welcome to the pytui documentation.
+Welcome to the textui documentation.
 
 .. toctree::
    :maxdepth: 2
@@ -16,6 +16,7 @@ Welcome to the pytui documentation.
    module_doc.rst
    uibuilder_doc.rst
    uielements_doc.rst
+   uiutils_doc.rst
    uierrors_doc.rst
 
 

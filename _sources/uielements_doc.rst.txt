@@ -5,7 +5,7 @@ uielements
 
 .. include:: includes/std_includes.rst
 
-.. automodule:: pytui.uielements
+.. automodule:: textui.uielements
 
 Usage
 *****
@@ -70,7 +70,7 @@ the user's input will be given to ``os.path.isfile``, which must return ``True``
 be accepted. This ensures consistent testing of both function inputs and user inputs.
 
 For the "opt" functions that call "user_input" functions that may return ``None`` if the user doesn't
-enter anything, the "opt" functions will, by default, raise a :class:`pytui.uierrors.UIOptNoneError`.
+enter anything, the "opt" functions will, by default, raise a :class:`textui.uierrors.UIOptNoneError`.
 This behavior can be overridden with the ``error_on_none`` keyword.
 
 Member functions
@@ -79,17 +79,17 @@ Member functions
 Standard interactive functions
 ------------------------------
 
-.. autofunction:: pytui.uielements.user_input_date
-.. autofunction:: pytui.uielements.user_input_list
-.. autofunction:: pytui.uielements.user_input_value
-.. autofunction:: pytui.uielements.user_input_yn
-.. autofunction:: pytui.uielements.user_onoff_list
+.. autofunction:: textui.uielements.user_input_date
+.. autofunction:: textui.uielements.user_input_list
+.. autofunction:: textui.uielements.user_input_value
+.. autofunction:: textui.uielements.user_input_yn
+.. autofunction:: textui.uielements.user_onoff_list
 
 Optional input functions
 ------------------------
 
-.. autofunction:: pytui.uielements.opt_user_input_date
-.. autofunction:: pytui.uielements.opt_user_input_list
-.. autofunction:: pytui.uielements.opt_user_input_value
-.. autofunction:: pytui.uielements.opt_user_input_yn
-.. autofunction:: pytui.uielements.opt_user_onoff_list
+.. autofunction:: textui.uielements.opt_user_input_date
+.. autofunction:: textui.uielements.opt_user_input_list
+.. autofunction:: textui.uielements.opt_user_input_value
+.. autofunction:: textui.uielements.opt_user_input_yn
+.. autofunction:: textui.uielements.opt_user_onoff_list

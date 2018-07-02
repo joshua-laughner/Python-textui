@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>uielements &#8212; pytui 0.1.0 documentation</title>
+    <title>uielements &#8212; textui 0.1.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="_static/documentation_options.js"></script>
@@ -15,7 +15,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="uierrors" href="uierrors_doc.html" />
+    <link rel="next" title="uiutils" href="uiutils_doc.html" />
     <link rel="prev" title="uibuilder" href="uibuilder_doc.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -34,12 +34,12 @@
   <div class="section" id="uielements">
 <span id="uielements-ref-label"></span><h1>uielements<a class="headerlink" href="#uielements" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="index.html">Back to the docs main page</a></p>
-<span class="target" id="module-pytui.uielements"></span><p>This module contains the low level text UI elements for the package pytui.</p>
+<span class="target" id="module-textui.uielements"></span><p>This module contains the low level text UI elements for the package textui.</p>
 <p>This module contains the functions that actually handle user input. Each function is
 configured so that the user input occurs within a while True loop. Input checking is
 done on the user input and the loop will not exit if an invalid value was given.</p>
 <p>You are welcome to use these functions directly in your programs if you do not wish
-to use the menu construct classes also provided in the pytui package.</p>
+to use the menu construct classes also provided in the textui package.</p>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>This module contains two groups of functions: <a class="reference internal" href="#standard-interactive-functions">standard interactive functions</a>
@@ -50,7 +50,7 @@ input if a particular value is not given programmatically.</p>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>The standard interactive functions are generally pretty straightforward. Here is an
-example using <a class="reference internal" href="#pytui.uielements.user_input_date" title="pytui.uielements.user_input_date"><code class="xref py py-func docutils literal notranslate"><span class="pre">user_input_date()</span></code></a> (lines beginning with <code class="docutils literal notranslate"><span class="pre">$</span></code> are the code, the
+example using <a class="reference internal" href="#textui.uielements.user_input_date" title="textui.uielements.user_input_date"><code class="xref py py-func docutils literal notranslate"><span class="pre">user_input_date()</span></code></a> (lines beginning with <code class="docutils literal notranslate"><span class="pre">$</span></code> are the code, the
 others are printed by Python):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ user_date = user_input_date(&#39;Enter the first date to load data for&#39;)
 Enter the first date to load data for
@@ -71,7 +71,7 @@ keyword, which will force the user to enter something. In general, these functio
 with the idea that the encapsulating program will handle the return of <code class="docutils literal notranslate"><span class="pre">None</span></code> as a signal to
 gracefully stop, or otherwise handle the fact that the user does not know what to enter.</p>
 <p>Here is an example case where you might use one of the optional input functions,
-in this case <a class="reference internal" href="#pytui.uielements.opt_user_input_value" title="pytui.uielements.opt_user_input_value"><code class="xref py py-func docutils literal notranslate"><span class="pre">opt_user_input_value()</span></code></a>:</p>
+in this case <a class="reference internal" href="#textui.uielements.opt_user_input_value" title="textui.uielements.opt_user_input_value"><code class="xref py py-func docutils literal notranslate"><span class="pre">opt_user_input_value()</span></code></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">read_data_from_file</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">opt_user_input_value</span><span class="p">(</span><span class="s1">&#39;Enter the name of the file to open&#39;</span><span class="p">,</span>
                                     <span class="n">filename</span><span class="p">,</span>
@@ -96,7 +96,7 @@ we give <code class="docutils literal notranslate"><span class="pre">is_valid_te
 the user’s input will be given to <code class="docutils literal notranslate"><span class="pre">os.path.isfile</span></code>, which must return <code class="docutils literal notranslate"><span class="pre">True</span></code> for that value to
 be accepted. This ensures consistent testing of both function inputs and user inputs.</p>
 <p>For the “opt” functions that call “user_input” functions that may return <code class="docutils literal notranslate"><span class="pre">None</span></code> if the user doesn’t
-enter anything, the “opt” functions will, by default, raise a <a class="reference internal" href="uierrors_doc.html#pytui.uierrors.UIOptNoneError" title="pytui.uierrors.UIOptNoneError"><code class="xref py py-class docutils literal notranslate"><span class="pre">pytui.uierrors.UIOptNoneError</span></code></a>.
+enter anything, the “opt” functions will, by default, raise a <a class="reference internal" href="uierrors_doc.html#textui.uierrors.UIOptNoneError" title="textui.uierrors.UIOptNoneError"><code class="xref py py-class docutils literal notranslate"><span class="pre">textui.uierrors.UIOptNoneError</span></code></a>.
 This behavior can be overridden with the <code class="docutils literal notranslate"><span class="pre">error_on_none</span></code> keyword.</p>
 </div>
 <div class="section" id="member-functions">
@@ -104,8 +104,8 @@ This behavior can be overridden with the <code class="docutils literal notransla
 <div class="section" id="standard-interactive-functions">
 <h3>Standard interactive functions<a class="headerlink" href="#standard-interactive-functions" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="pytui.uielements.user_input_date">
-<code class="descclassname">pytui.uielements.</code><code class="descname">user_input_date</code><span class="sig-paren">(</span><em>prompt</em>, <em>currentvalue=None</em>, <em>emptycancel=True</em>, <em>req_time_part='day'</em>, <em>smallest_allowed_time_part=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#user_input_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.user_input_date" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.user_input_date">
+<code class="descclassname">textui.uielements.</code><code class="descname">user_input_date</code><span class="sig-paren">(</span><em>prompt</em>, <em>currentvalue=None</em>, <em>emptycancel=True</em>, <em>req_time_part='day'</em>, <em>smallest_allowed_time_part=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#user_input_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.user_input_date" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request that the user input a date.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -140,8 +140,8 @@ effectively giving the user only one choice for how specific to make their time.
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.user_input_list">
-<code class="descclassname">pytui.uielements.</code><code class="descname">user_input_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>options</em>, <em>returntype='value'</em>, <em>currentvalue=None</em>, <em>emptycancel=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#user_input_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.user_input_list" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.user_input_list">
+<code class="descclassname">textui.uielements.</code><code class="descname">user_input_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>options</em>, <em>returntype='value'</em>, <em>currentvalue=None</em>, <em>emptycancel=True</em>, <em>printcols=True</em>, <em>**printcolargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#user_input_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.user_input_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function provides the user a list of choices to choose from, the user selects one by its number</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -155,9 +155,13 @@ will be the value of the option chosen. If set to “index”, the return value 
 chosen.</li>
 <li><strong>currentvalue</strong> – optional, defaults to None. Sets what the current value of this option is. If one is given, it
 will be marked with a * in the list.</li>
-<li><strong>emptycancel</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional (type = bool), defaults to True. If true, then this function will return None if no
+<li><strong>emptycancel</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional, defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, then this function will return None if no
 answer is chosen (but not if an invalid selection is chosen). A message indicating that an empty answer will
-cancel is added to the prompt. If false, the list of options will be re-presented if no answer given.</li>
+cancel is added to the prompt. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the list of options will be re-presented if no answer given.</li>
+<li><strong>printcols</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional, controls whether the individual options should be spread out across the terminal in
+columns (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or all printed in one column (<code class="docutils literal notranslate"><span class="pre">False</span></code>).</li>
+<li><strong>printcolargs</strong> – keyword arguments to be passed through to <a class="reference internal" href="uiutils_doc.html#textui.uiutils.print_in_columns" title="textui.uiutils.print_in_columns"><code class="xref py py-func docutils literal notranslate"><span class="pre">textui.uiutils.print_in_columns()</span></code></a>. Only has
+an effect if <code class="docutils literal notranslate"><span class="pre">printcols</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -169,8 +173,8 @@ cancel is added to the prompt. If false, the list of options will be re-presente
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.user_input_value">
-<code class="descclassname">pytui.uielements.</code><code class="descname">user_input_value</code><span class="sig-paren">(</span><em>prompt</em>, <em>testfxn=None</em>, <em>testmsg=None</em>, <em>currval=None</em>, <em>returntype=&lt;class 'str'&gt;</em>, <em>emptycancel=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#user_input_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.user_input_value" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.user_input_value">
+<code class="descclassname">textui.uielements.</code><code class="descname">user_input_value</code><span class="sig-paren">(</span><em>prompt</em>, <em>testfxn=None</em>, <em>testmsg=None</em>, <em>currval=None</em>, <em>returntype=&lt;class 'str'&gt;</em>, <em>emptycancel=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#user_input_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.user_input_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ask the user to input a value.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -205,8 +209,8 @@ is True and the user does not enter a value.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.user_input_yn">
-<code class="descclassname">pytui.uielements.</code><code class="descname">user_input_yn</code><span class="sig-paren">(</span><em>prompt</em>, <em>default='y'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#user_input_yn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.user_input_yn" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.user_input_yn">
+<code class="descclassname">textui.uielements.</code><code class="descname">user_input_yn</code><span class="sig-paren">(</span><em>prompt</em>, <em>default='y'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#user_input_yn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.user_input_yn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prompts the user with a yes/no question, returns True if answer is yes, False if answer is no.</p>
 <p>This is similar to user_input_value with a bool
 return type, but handles it differently if the user does not enter a
@@ -231,8 +235,8 @@ default answer.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.user_onoff_list">
-<code class="descclassname">pytui.uielements.</code><code class="descname">user_onoff_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>options</em>, <em>currentstate=None</em>, <em>feedback_level=2</em>, <em>returntype='opts'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#user_onoff_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.user_onoff_list" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.user_onoff_list">
+<code class="descclassname">textui.uielements.</code><code class="descname">user_onoff_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>options</em>, <em>currentstate=None</em>, <em>feedback_level=2</em>, <em>returntype='opts'</em>, <em>printcols=True</em>, <em>**printcolargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#user_onoff_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.user_onoff_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provides a list of toggleable options to the user</p>
 <p>Will print the prompt followed by the list of options provided. The user
 can interactively toggle each option on or off.</p>
@@ -255,6 +259,10 @@ reserved against future intermediate levels of feedback).</li>
 which returns a list of the subset of options selected. May also be “bools”, meaning
 that a list of booleans the same length as options is returned, True for what options
 the user selected.</li>
+<li><strong>printcols</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – optional, controls whether the individual options should be spread out
+across the terminal in columns (<code class="docutils literal notranslate"><span class="pre">True</span></code>) or all printed in one column (<code class="docutils literal notranslate"><span class="pre">False</span></code>).</li>
+<li><strong>printcolargs</strong> – keyword arguments to be passed through to <a class="reference internal" href="uiutils_doc.html#textui.uiutils.print_in_columns" title="textui.uiutils.print_in_columns"><code class="xref py py-func docutils literal notranslate"><span class="pre">textui.uiutils.print_in_columns()</span></code></a>. Only has
+an effect if <code class="docutils literal notranslate"><span class="pre">printcols</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -270,8 +278,8 @@ states of the options (returntype == “bools”), or None if the user cancels.<
 <div class="section" id="optional-input-functions">
 <h3>Optional input functions<a class="headerlink" href="#optional-input-functions" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="pytui.uielements.opt_user_input_date">
-<code class="descclassname">pytui.uielements.</code><code class="descname">opt_user_input_date</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>is_valid_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#opt_user_input_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.opt_user_input_date" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.opt_user_input_date">
+<code class="descclassname">textui.uielements.</code><code class="descname">opt_user_input_date</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>is_valid_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#opt_user_input_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.opt_user_input_date" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper around user_input_date that calls it only if an interactive input is necessary.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -301,8 +309,8 @@ is raised.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.opt_user_input_list">
-<code class="descclassname">pytui.uielements.</code><code class="descname">opt_user_input_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>options</em>, <em>do_ask_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#opt_user_input_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.opt_user_input_list" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.opt_user_input_list">
+<code class="descclassname">textui.uielements.</code><code class="descname">opt_user_input_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>options</em>, <em>do_ask_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#opt_user_input_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.opt_user_input_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper around user_input_list that calls it only if an interactive choice is necessary.</p>
 <p>This function takes mostly the same arguments as user_input_list, but in addition takes an existing value and
 tests if that value indicates that a choice needs to be made, or if not, that it is a valid option. Typically,
@@ -338,8 +346,8 @@ is not in options and user_input_list is not called.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.opt_user_input_value">
-<code class="descclassname">pytui.uielements.</code><code class="descname">opt_user_input_value</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>is_valid_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#opt_user_input_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.opt_user_input_value" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.opt_user_input_value">
+<code class="descclassname">textui.uielements.</code><code class="descname">opt_user_input_value</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>is_valid_test=None</em>, <em>invalid_msg=None</em>, <em>error_on_none=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#opt_user_input_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.opt_user_input_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper around user_input_value that calls it only if an interactive input is necessary</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -372,8 +380,8 @@ is raised.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.opt_user_input_yn">
-<code class="descclassname">pytui.uielements.</code><code class="descname">opt_user_input_yn</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#opt_user_input_yn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.opt_user_input_yn" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.opt_user_input_yn">
+<code class="descclassname">textui.uielements.</code><code class="descname">opt_user_input_yn</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>do_ask_test=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#opt_user_input_yn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.opt_user_input_yn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper around user_input_yn that calls it only if an interactive choice is required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -397,8 +405,8 @@ user_input_yn if value is None).</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="pytui.uielements.opt_user_onoff_list">
-<code class="descclassname">pytui.uielements.</code><code class="descname">opt_user_onoff_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>options</em>, <em>do_ask_test=None</em>, <em>returntype='opts'</em>, <em>value_name='The value'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytui/uielements.html#opt_user_onoff_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytui.uielements.opt_user_onoff_list" title="Permalink to this definition">¶</a></dt>
+<dt id="textui.uielements.opt_user_onoff_list">
+<code class="descclassname">textui.uielements.</code><code class="descname">opt_user_onoff_list</code><span class="sig-paren">(</span><em>prompt</em>, <em>value</em>, <em>options</em>, <em>do_ask_test=None</em>, <em>returntype='opts'</em>, <em>value_name='The value'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/textui/uielements.html#opt_user_onoff_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#textui.uielements.opt_user_onoff_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper around user_onoff_list that calls it only if an interactive choice is required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -459,7 +467,7 @@ depending on the value of returntype. Will either be the input value, or the use
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="uibuilder_doc.html" title="previous chapter">uibuilder</a></li>
-      <li>Next: <a href="uierrors_doc.html" title="next chapter">uierrors</a></li>
+      <li>Next: <a href="uiutils_doc.html" title="next chapter">uiutils</a></li>
   </ul></li>
 </ul>
 </div>
