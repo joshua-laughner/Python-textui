@@ -16,6 +16,7 @@ from __future__ import print_function, division, absolute_import
 from collections import OrderedDict
 import copy
 import datetime as dt
+from getpass import getpass
 import re
 import sys
 
@@ -31,6 +32,67 @@ elif sys.version_info.major == 3:
     from shutil import get_terminal_size
 else:
     raise NotImplementedError('No text input function defined for Python version {}'.format(sys.version_info.major))
+
+
+def user_message(message, max_columns=None, pause=False):
+    """
+    Print a message to the user, with some extra utility over the basic print() function.
+
+    :param message: the message to print
+    :type message: str
+
+    :param max_columns: optional, the maximum number of columns to print for a single line. Default is ``None``, i.e.
+     do not wrap the message at all. Must be > 0.
+    :type max_columns: int
+
+    :param pause: optional, if ``True``, then after displaying the message, Python will pause and ask the user to press
+     enter to continue. Default is ``False``.
+    :type pause: bool
+
+    :return: None
+    """
+    terminal_cols = get_terminal_size().columns
+
+    # If the user specifies a maximum number of columns greater than the current terminal width, don't do anything
+    if max_columns is not None:
+        if max_columns <= 0:
+            UIErrorWrapper.raise_error(UIValueError('max_columns must be > 0'))
+        elif max_columns > terminal_cols:
+            max_columns = None
+
+    if max_columns is not None:
+        # We need to respect existing newlines. Split the message into lines to start with, then wrap each line
+        # individually
+        message_parts = message.split('\n')
+        lines = []
+        for part in message_parts:
+            start = 0
+            end = start + max_columns
+            while end < len(part):
+                i_space = part.rfind(' ', start, end)
+                if i_space < 0:
+                    # It is possible that there is a word that does not fit on a single line. In that case, rfind will
+                    # return -1 because it cannot find a space between start and end. In this case, the best we can do
+                    # right now is to find the next space after what should be the end of the line and break there.
+                    #
+                    # Could look into the "Pyphen" package (http://pyphen.org/) for hyphenation
+                    i_space = part.find(' ', end)
+                    if i_space < 0:
+                        # If we're still getting i_space < 0 that probably means the long word is at the end of the
+                        # string, so we should just break out of the loop and append the rest of the message part as
+                        # a line.
+                        break
+                lines.append(part[start:i_space])
+                start = i_space + 1
+                end = start + max_columns
+            lines.append(part[start:])
+    else:
+        lines = [message]
+
+    print('\n'.join(lines))
+    if pause:
+        # use getpass here just to avoid printing other characters to the screen, so it looks nice
+        getpass('\nPress ENTER to continue')
 
 
 def user_input_list(prompt, options, returntype="value", currentvalue=None, emptycancel=True, printcols=True, **printcolargs):
@@ -230,9 +292,10 @@ def _human_readable_time_format(fmt):
     return fmt
 
 
-def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
+def user_input_value(prompt, testfxn=None, testmsg=None, currentvalue=None,
                      returntype=str, emptycancel=True):
-    """Ask the user to input a value.
+    """
+    Ask the user to input a value.
 
     :param prompt: The prompt to give the user
     :type prompt: str
@@ -248,14 +311,14 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
         will just see "That is not an allowed value", which isn't very helpful.
     :type testmsg: str
 
-    :param currval: optional, the current value of the option. If given, the value will
+    :param currentvalue: optional, the current value of the option. If given, the value will
         be printed after the prompt
 
     :param returntype: optional, must be a type which can be used as a function to convert
         a string to that type, e.g. int, bool, float, list. If the type is bool, this function
         will require the user to enter T or F (or nothing if emptycancel is True). If not given,
         the user input will be returned as a string.
-    :type returntype: str
+    :type returntype: type
 
     :param emptycancel: optional, defaults to True. If True, then the user
         can enter an empty string, which will make this function return None.
@@ -285,8 +348,8 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
         testmsg = 'That is not an allowed value'
 
     print(prompt)
-    if currval is not None:
-        print("The current value is {0}".format(currval))
+    if currentvalue is not None:
+        print("The current value is {0}".format(currentvalue))
 
     while True:
         if returntype is bool:
@@ -317,7 +380,7 @@ def user_input_value(prompt, testfxn=None, testmsg=None, currval=None,
                         print(testmsg)
 
 
-def user_input_yn(prompt, default="y"):
+def user_input_yn(prompt, currentvalue="y"):
     """Prompts the user with a yes/no question, returns True if answer is yes, False if answer is no.
 
     This is similar to user_input_value with a bool
@@ -327,19 +390,19 @@ def user_input_yn(prompt, default="y"):
 
     :param prompt: The prompt string that the user should be shown
     :type prompt: str
-    :param default: optional, must be either the string "y" or "n". Sets the
+    :param currentvalue: optional, must be either the string "y" or "n". Sets the
         default answer.
-    :type default: bool
+    :type currentvalue: bool
     :return: bool
     """
 
     if type(prompt) is not str:
         UIErrorWrapper.raise_error(UITypeError("prompt must be a string"))
-    if type(default) is not str or default not in "YyNn":
+    if type(currentvalue) is not str or currentvalue not in "YyNn":
         UIErrorWrapper.raise_error(UITypeError("default must be the string 'y' or 'n'"))
 
     while True:
-        if default in "Yy":
+        if currentvalue in "Yy":
             defstr = " [y]/n"
             defaultans = True
         else:
@@ -357,7 +420,7 @@ def user_input_yn(prompt, default="y"):
             print("Enter y or n only. ", end="")
 
 
-def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, returntype="opts", printcols=True, **printcolargs):
+def user_onoff_list(prompt, options, currentvalue=None, feedback_level=2, returntype=None, printcols=True, **printcolargs):
     """Provides a list of toggleable options to the user
 
     Will print the prompt followed by the list of options provided. The user
@@ -367,13 +430,19 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
         by further instructions on what user inputs are valid.
     :type prompt: str
 
-    :param options: A list or tuple of strings of the option names
-    :type options: list or tuple
+    :param options: A list or tuple of strings of the option names or a dictionary with the options as key names and
+     their current values as the values
+    :type options: list, tuple, or dict.
 
-    :param currentstate: optional, describe the current state of the options (on or off).
+    :param currentvalue: optional, describe the current state of the options (on or off).
+        Can be either of two formats:
+            - a list of bools, where each element gives the value of the corresponding option
+            - a dict, where each option is a key in it and the values are bools. Generally
+              it is simpler to pass such a dict as ``options`` but there may be cases where
+              you need to define the options and their initial values separately.
         If not given, all default to False. Must be the same length as options. Is shallow
         copied internally so it will not change the values in the calling function.
-    :type currentstate: list of bools
+    :type currentvalue: list or dict of bools
 
     :param feedback_level: optional, an integer describing how much feedback
         to give the user. Defaults to 2, meaning that this function will print
@@ -381,10 +450,14 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
         reserved against future intermediate levels of feedback).
     :type feedback_level: int
 
-    :param returntype: optional, a string determining what is returned. Default is "opts",
-        which returns a list of the subset of options selected. May also be "bools", meaning
-        that a list of booleans the same length as options is returned, True for what options
-        the user selected.
+    :param returntype: optional, a string determining what is returned. Allowed values are:
+            - "opts", which returns a list of the subset of options selected.
+            - "bools", meaning that a list of booleans the same length as options is returned, True for what options
+                the user selected.
+            - "dict", which returns an OrderedDict where the keys are the options and the values are True for what
+                options the user selected.
+        The default value depends on how ``options`` is given; if ``options`` is a dict, then the default for this is
+        "dict". Otherwise the default is "opts". Explicitly passing a value for returntype overrides the default.
     :type returntype: str
 
     :param printcols: optional, controls whether the individual options should be spread out
@@ -399,19 +472,32 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
     """
     if type(prompt) is not str:
         UIErrorWrapper.raise_error(UITypeError("prompt must be a string"))
-    if type(options) is not list and type(options) is not tuple:
+
+    if isinstance(options, dict):
+        if currentvalue is not None:
+            UIErrorWrapper.raise_error(UITypeError("currentvalue must be None if options given as a dict"))
+
+        currentvalue = [v for v in options.values()]
+        options = [k for k in options.keys()]
+        returntype = "dict" if returntype is None else returntype
+    elif not isinstance(options, (list, tuple)):
         UIErrorWrapper.raise_error(UITypeError("options must be a list or tuple"))
-    elif not all([type(x) is str for x in options]):
+    elif not all([isinstance(x, str) for x in options]):
         UIErrorWrapper.raise_error(UITypeError("options must be a list or tuple of strings"))
-    if currentstate is None:
-        currentstate = [False]*len(options)
-    elif type(currentstate) is not list or not all([type(x) is bool for x in currentstate]):
-        UIErrorWrapper.raise_error(UITypeError("currentstate must be a list of bools, if given"))
-    elif len(currentstate) != len(options):
+    else:
+        returntype = "opts" if returntype is None else returntype
+
+    if currentvalue is None:
+        currentvalue = [False] * len(options)
+    elif len(currentvalue) != len(options):
         UIErrorWrapper.raise_error(UIValueError("currentstate must be the same length as options, if given"))
+    elif isinstance(currentvalue, dict):
+        currentvalue = [currentvalue[opt] for opt in options]
+    elif not isinstance(currentvalue, (list, tuple)) or not all([isinstance(x, bool) for x in currentvalue]):
+        UIErrorWrapper.raise_error(UITypeError("currentstate must be a list of bools, if given"))
     else:
         # Do not allow this function to modify the state in the calling workspace
-        currentstate = copy.copy(currentstate)
+        currentvalue = copy.copy(currentvalue)
 
     prompt += "\nEnter the number or multiple numbers separated by a space to toggle,\n" \
         "'a' or 'all' to toggle all, 'on' to set all on, 'off' to set all off,\n" \
@@ -422,7 +508,7 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
     while True:
         entries = []
         for i in range(len(options)):
-            if currentstate[i]:
+            if currentvalue[i]:
                 state_str = "[*]"
             else:
                 state_str = "[ ]"
@@ -442,9 +528,11 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
             continue
         elif user_ans.lower() == "r":
             if returntype == "bools":
-                return currentstate
+                return currentvalue
             elif returntype == "opts":
-                return [opt for i, opt in enumerate(options) if currentstate[i]]
+                return [opt for i, opt in enumerate(options) if currentvalue[i]]
+            elif returntype == "dict":
+                return OrderedDict([(opt, currentvalue[i]) for i, opt in enumerate(options)])
             else:
                 UIErrorWrapper.raise_error(NotImplementedError('No return method implemented for returntype == "{}"'.format(returntype)))
         elif user_ans.lower() == "c":
@@ -453,9 +541,9 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
             # Python3 range compatible
             opt_inds = range(len(options))
         elif user_ans.lower() == "on":
-            opt_inds = [i for i in range(len(options)) if not currentstate[i]]
+            opt_inds = [i for i in range(len(options)) if not currentvalue[i]]
         elif user_ans.lower() == "off":
-            opt_inds = [i for i in range(len(options)) if currentstate[i]]
+            opt_inds = [i for i in range(len(options)) if currentvalue[i]]
         else:
             user_ans = re.split("\s+", user_ans)
             for u_part in user_ans:
@@ -470,7 +558,7 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
                     else:
                         opt = [x for x in range(u_list[0], u_list[1] + 1)]
 
-                    if all([o >= 0 and o < len(options) for o in opt]):
+                    if all([0 <= o < len(options) for o in opt]):
                         opt_inds += opt
                     else:
                         bad_opts.append(u_part)
@@ -480,7 +568,7 @@ def user_onoff_list(prompt, options, currentstate=None, feedback_level=2, return
                   "out of range or not a number".format(", ".join(bad_opts)))
 
         for i in opt_inds:
-            currentstate[i] = not currentstate[i]
+            currentvalue[i] = not currentvalue[i]
 
 
 def _optional_input(user_input_fxn, prompt, value, do_ask_fxn, input_valid_fxn, input_invalid_msg, *args, **kwargs):
