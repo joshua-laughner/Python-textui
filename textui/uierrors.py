@@ -153,6 +153,13 @@ class UIOptNoneError(UIError):
     pass
 
 
+class UINotImplementedError(UIError):
+    """
+    A subclass of UIError for unimplemented cases
+    """
+    pass
+
+
 class UITermError(UIError):
     pass
 

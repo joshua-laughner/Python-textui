@@ -18,10 +18,19 @@ class StopMainLoop(Exception):
 
 
 class _MenuItem(object):
-    def __init__(self, name_in, callback_in):
+    @property
+    def hide_if(self):
+        return self._hide_if
+
+    def __init__(self, name_in, callback_in, hide_if=None):
         self.name = name_in
         # This should be an instance of _CallBack
         self.callback = callback_in
+
+        if hide_if is None:
+            hide_if = lambda pgrm_data: False
+
+        self._hide_if = hide_if
 
 
 class _CallBack(object):
@@ -76,9 +85,11 @@ class Menu(object):
     @property
     def _last_item(self):
         if self.parent is None:
-            return _MenuItem("Quit", _CallBack(self._quit_program, self))
+            label = 'Quit' if self._last_item_name_override is None else self._last_item_name_override
+            return _MenuItem(label, _CallBack(self._quit_program, self))
         else:
-            return _MenuItem("Up one level", _CallBack(self._up_one_level, self))
+            label = 'Back' if self._last_item_name_override is None else self._last_item_name_override
+            return _MenuItem(label, _CallBack(self._up_one_level, self))
 
     @property
     def item_names(self):
@@ -94,7 +105,8 @@ class Menu(object):
     def children(self):
         return {c.name: c for c in self.menu_items[:-1]}
 
-    def __init__(self, menu_name, parent=None, hard_quit=False, enter_hook=None, exit_hook=None, auto_exit=False):
+    def __init__(self, menu_name, parent=None, hard_quit=False, enter_hook=None, exit_hook=None, auto_exit=False,
+                 last_item_name_override=None):
         """
         A multiple choice menu that links to other menus in a hierarchy.
 
@@ -137,6 +149,7 @@ class Menu(object):
         self._hard_quit = hard_quit
         self._auto_exit = auto_exit  # should this menu automatically exit after a choice is made once?
         self._trigger_auto_exit = False  # used to trigger auto exit when we return here
+        self._last_item_name_override = last_item_name_override
 
         if enter_hook is None:
             enter_hook = lambda x: True
@@ -151,11 +164,43 @@ class Menu(object):
         # top menu, then it should be to quit.
         self._menu_items = []
 
-    def interact(self, prog_data):
+    def visible_menu_items(self, pgrm_data):
+        """
+        Get the list of menu items that are currently visible
+
+        :param pgrm_data: the program data dictionary
+        :type pgrm_data: dict
+
+        :return: list of menu items
+        :rtype: list of `_MenuItem`s
+        """
+        return [item for item in self.menu_items if not item.hide_if(pgrm_data)]
+
+    def visible_item_names(self, pgrm_data):
+        """
+        Get the names of menu items currently visible
+
+        :param pgrm_data: the program data dictionary
+        :type pgrm_data: dict
+
+        :return: list of menu item names
+        :rtype: list of str
+        """
+        return [item.name for item in self.visible_menu_items(pgrm_data)]
+
+    def interact(self, pgrm_data):
+        """
+        Main method to interact with the menu
+
+        :param pgrm_data: the program data dictionary
+        :type pgrm_data: dict
+
+        :return: the next callback to execute
+        """
         def call_hook(hook):
-            result = hook(prog_data)
+            result = hook(pgrm_data)
             if result is None:
-                result = False
+                result = True
             return result
 
         # Auto-exit assumes that all the options in this menu automatically return to this menu - i.e. none of them are
@@ -168,15 +213,15 @@ class Menu(object):
             if post_result:
                 return self._last_item.callback
 
-        pre_result = self._enter_hook(prog_data)
-        if pre_result is not None and not pre_result:
+        pre_result = call_hook(self._enter_hook)
+        if not pre_result:
             # TODO: should this trigger when coming from a child menu?
             return self._last_item.callback
 
-        ind = user_input_list("\n=== {0} ===".format(self.name), self.item_names, returntype="index",
+        ind = user_input_list("\n=== {0} ===".format(self.name), self.visible_item_names(pgrm_data), returntype="index",
                               emptycancel=False)
 
-        if ind == (len(self.menu_items) - 1):
+        if ind == (len(self.visible_menu_items(pgrm_data)) - 1):
             # Only trigger the exit hook if we are going back to the previous menu or quitting
             post_result = call_hook(self._exit_hook)
             if post_result is None:
@@ -185,21 +230,27 @@ class Menu(object):
             post_result = True
 
         if post_result:
-            if self._auto_exit and ind < (len(self.menu_items) - 1):
+            if self._auto_exit and ind < (len(self.visible_menu_items(pgrm_data)) - 1):
                 self._trigger_auto_exit = True
-            return self.menu_items[ind].callback
+            return self.visible_menu_items(pgrm_data)[ind].callback
         else:
             return _CallBack(self.interact, self)
 
-    def _add_item(self, name, callback):
+    def _add_item(self, name, callback, hide_if=None):
         """
         _add_item is the internal method call used to add a menu item to this Menu.
         Using this in typical menu building is not recommended because it REQUIRES that
         your callback function return an instance of _Callback when it completes. This
         can add some flexibility (if you want to have a function go somewhere else than the
         calling Menu when it finishes) but requires you to take responsibility for that.
+
         :param name: the name of the menu item, as a string
+
         :param callback: a function which returns an instance of _Callback
+
+        :param hide_if: optional, if given, must be a function that accepts one argument (the
+         program data dict, see `Program`) and returns ``True`` if this submenu should be hidden,
+         False otherwise.
         :return: none
         """
         if type(name) is not str:
@@ -211,17 +262,24 @@ class Menu(object):
             callback_inst = callback
         else:
             callback_inst = _CallBack(callback, self)
-        item = _MenuItem(name, callback_inst)
+        item = _MenuItem(name, callback_inst, hide_if=hide_if)
 
         self._menu_items.append(item)
 
-    def add_submenu(self, submenu_title, menu_item_name=None, **submenu_kwargs):
+    def add_submenu(self, submenu_title, menu_item_name=None, hide_if=None, **submenu_kwargs):
         """
         add_submenu creates a new instance of Menu with this Menu as the parent,
         adds it as the next-to-last option in this Menu, and returns the new instance of Menu.
+
         :param submenu_title: The title of the submenu, passed as the first argument to Menu()
+
         :param menu_item_name: optional, if given, will be used as the item name in the current
         menu, if not given, the submenu_title is used both as the menu title and the item name
+
+        :param hide_if: optional, if given, must be a function that accepts one argument (the
+         program data dict, see `Program`) and returns ``True`` if this submenu should be hidden,
+         False otherwise.
+
         :return: instance of Menu
         """
         if not isinstance(submenu_title, str):
@@ -233,15 +291,22 @@ class Menu(object):
             UIErrorWrapper.raise_error(UITypeError("menu_item_name must be a string, if given"))
 
         smenu = Menu(submenu_title, parent=self, **submenu_kwargs)
-        self._add_item(menu_item_name, smenu.interact)
+        self._add_item(menu_item_name, smenu.interact, hide_if=hide_if)
         return smenu
 
-    def attach_submenu(self, submenu, menu_item_name=None):
+    def attach_submenu(self, submenu, menu_item_name=None, hide_if=None):
         """
         attach_submenu takes an existing instance of Menu and binds it as an option in this Menu.
+
         :param submenu: the Menu to attach to the current menu
+
         :param menu_item_name: if given, overrides the name used in the options list of this menu.
         If not given, the menu item is given the value of submenu.name
+
+        :param hide_if: optional, if given, must be a function that accepts one argument (the
+         program data dict, see `Program`) and returns ``True`` if this submenu should be hidden,
+         False otherwise.
+
         :return: none
         """
 
@@ -256,18 +321,25 @@ class Menu(object):
             UIErrorWrapper.warn('While attaching menu "{0}" to "{1}": {0} already has a parent which will be overwritten'
                                 .format(submenu.name, self.name))
         submenu.parent = self
-        self._add_item(menu_item_name, submenu.interact)
+        self._add_item(menu_item_name, submenu.interact, hide_if=hide_if)
 
     def add_setting_menu(self, submenu_title, setting_callback, setting_default=None, menu_item_name=None):
-        pass
+        raise NotImplementedError('Setting menus not implemented; may never be')
 
-    def attach_custom_fxn(self, menu_item_name, callback_fxn):
+    def attach_custom_fxn(self, menu_item_name, callback_fxn, hide_if=None):
         """
         attach_custom_fxn is the usual way to add functions that actually DO SOMETHING to a menu,
         rather than adding a submenu.
+
         :param menu_item_name: the name that the item should have in the Menu, as a string
+
         :param callback_fxn: the function that should execute when this menu item is selected,
-        it must accept one argument and return nothing.
+         it must accept one argument and return nothing.
+
+        :param hide_if: optional, if given, must be a function that accepts one argument (the
+         program data dict, see `Program`) and returns ``True`` if this submenu should be hidden,
+         False otherwise.
+
         :return: none
         """
         if not isinstance(menu_item_name, str):
@@ -275,7 +347,7 @@ class Menu(object):
         if not callable(callback_fxn):
             UIErrorWrapper.raise_error(TypeError('callback_fxn must be a function'))
 
-        self._add_item(menu_item_name, _CallBack(self.interact, self, callback_fxn))
+        self._add_item(menu_item_name, _CallBack(self.interact, self, callback_fxn), hide_if=hide_if)
 
     def _up_one_level(self, _):
         return _CallBack(self.parent.interact, self)

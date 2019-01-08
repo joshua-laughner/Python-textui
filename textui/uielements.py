@@ -392,7 +392,7 @@ def user_input_yn(prompt, currentvalue="y"):
     :type prompt: str
     :param currentvalue: optional, must be either the string "y" or "n". Sets the
         default answer.
-    :type currentvalue: bool
+    :type currentvalue: str
     :return: bool
     """
 
