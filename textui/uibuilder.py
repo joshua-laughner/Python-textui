@@ -85,10 +85,10 @@ class Menu(object):
     @property
     def _last_item(self):
         if self.parent is None:
-            label = 'Quit' if self._last_item_name_override is None else self._last_item_name_override
+            label = self._last_item_name.format('Quit')
             return _MenuItem(label, _CallBack(self._quit_program, self))
         else:
-            label = 'Back' if self._last_item_name_override is None else self._last_item_name_override
+            label = self._last_item_name.format('Back')
             return _MenuItem(label, _CallBack(self._up_one_level, self))
 
     @property
@@ -143,13 +143,18 @@ class Menu(object):
          the main menu) after the user selects an option and returns to this menu - this usually only makes sense if
          none of the options are further sub menus.
         :type auto_exit: bool
+
+        :param last_item_name_override: String to use in place of the default for the last menu item (that either quits
+         or returns to the previous menu). Include a pair of brackets ({}) in the string for them to be replaced with
+         the standard last menu item string ("Back" or "Quit").
+        :type last_item_name_override: str
         """
         self.name = menu_name
         self.parent = parent
         self._hard_quit = hard_quit
         self._auto_exit = auto_exit  # should this menu automatically exit after a choice is made once?
         self._trigger_auto_exit = False  # used to trigger auto exit when we return here
-        self._last_item_name_override = last_item_name_override
+        self._last_item_name = last_item_name_override if last_item_name_override is not None else '{}'
 
         if enter_hook is None:
             enter_hook = lambda x: True
