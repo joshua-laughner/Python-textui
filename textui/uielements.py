@@ -20,7 +20,7 @@ from getpass import getpass
 import re
 import sys
 
-from .uiutils import print_in_columns
+from .uiutils import print_in_columns, hard_wrap
 from .uierrors import UIErrorWrapper, UITypeError, UIValueError, UIOptNoneError
 
 
@@ -61,31 +61,7 @@ def user_message(message, max_columns=None, pause=False):
             max_columns = None
 
     if max_columns is not None:
-        # We need to respect existing newlines. Split the message into lines to start with, then wrap each line
-        # individually
-        message_parts = message.split('\n')
-        lines = []
-        for part in message_parts:
-            start = 0
-            end = start + max_columns
-            while end < len(part):
-                i_space = part.rfind(' ', start, end)
-                if i_space < 0:
-                    # It is possible that there is a word that does not fit on a single line. In that case, rfind will
-                    # return -1 because it cannot find a space between start and end. In this case, the best we can do
-                    # right now is to find the next space after what should be the end of the line and break there.
-                    #
-                    # Could look into the "Pyphen" package (http://pyphen.org/) for hyphenation
-                    i_space = part.find(' ', end)
-                    if i_space < 0:
-                        # If we're still getting i_space < 0 that probably means the long word is at the end of the
-                        # string, so we should just break out of the loop and append the rest of the message part as
-                        # a line.
-                        break
-                lines.append(part[start:i_space])
-                start = i_space + 1
-                end = start + max_columns
-            lines.append(part[start:])
+        lines = hard_wrap(message, max_columns=max_columns)
     else:
         lines = [message]
 
@@ -228,7 +204,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='
     elif smallest_allowed_time_part not in time_formats and smallest_allowed_time_part is not None:
         UIErrorWrapper.raise_error(UITypeError('smallest_allowed_time_part must be one of: {}'.format(', '.join(time_formats.keys()))))
     else:
-        key_ind = time_formats.keys().index(req_time_part)
+        key_ind = list(time_formats.keys()).index(req_time_part)
         if smallest_allowed_time_part is None:
             smallest_ind = key_ind + 1
         else:
@@ -236,7 +212,7 @@ def user_input_date(prompt, currentvalue=None, emptycancel=True, req_time_part='
 
         if smallest_ind <= key_ind:
             UIErrorWrapper.raise_error(UIValueError('req_time_part must be a larger piece of time than smallest_allowed_time_part'))
-        allowed_time_fmts = time_formats.values()[key_ind:smallest_ind]
+        allowed_time_fmts = list(time_formats.values())[key_ind:smallest_ind]
         allowed_fmts_str = ', '.join([_human_readable_time_format(fmt) for fmt in allowed_time_fmts])
 
     print(prompt)
