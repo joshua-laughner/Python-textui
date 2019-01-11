@@ -139,6 +139,8 @@ def print_in_columns(entries, buffer_chars=4, fixed_width_columns=False, column_
 def hard_wrap(message, max_columns=None):
     # We need to respect existing newlines. Split the message into lines to start with, then wrap each line
     # individually
+    if max_columns is None:
+        return [message]
     message_parts = message.split('\n')
     lines = []
     for part in message_parts:

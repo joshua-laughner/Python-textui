@@ -60,10 +60,7 @@ def user_message(message, max_columns=None, pause=False):
         elif max_columns > terminal_cols:
             max_columns = None
 
-    if max_columns is not None:
-        lines = hard_wrap(message, max_columns=max_columns)
-    else:
-        lines = [message]
+    lines = hard_wrap(message, max_columns=max_columns)
 
     print('\n'.join(lines))
     if pause:
